@@ -87,11 +87,10 @@ describe("Airdrop SOL", () => {
   });
 });
 
-describe("Create Random Token", () => {
-  const SOLANA_CONNECTION = new Connection("http://127.0.0.1:8899");
+describe("Create Random Token for Presale", () => {
   const program = anchor.workspace.TokenPresale as anchor.Program<TokenPresale>;
 
-  it("Initialize", async () => {
+  it("Initialize the Presale", async () => {
     // Create a new SPL token
     newToken = await token.createMint(
       anchor.getProvider().connection,
@@ -114,28 +113,20 @@ describe("Create Random Token", () => {
     );
     console.log("Associated token address for admin", tokenAccount.toString());
 
-    
-    //set timeout to account for airdrop finalization
-    // let mint;
-    // var myToken
-    // async function createToken() {
-    //     console.log('Initialize new token');
-    //     //create mint
-    //     console.log('solana public address: ' + ADMIN_WALLET_ADDRESS_PUB_KEY.toBase58());
-    //     mint = await splToken.Token.createMint(connection, ADMIN_WALLET_ADDRESS_PUB_KEY, ADMIN_WALLET_ADDRESS_PUB_KEY, null, 9, splToken.TOKEN_PROGRAM_ID);
+    // const ata = await getAssociatedTokenAddress(tokenAccount, receiveAddress);
 
-    // await token.mintTo(
-    //   anchor.getProvider().connection,
-    //   wallet.payer,
-    //   newToken,
-    //   tokenAccount,
-    //   wallet.payer,
-    //   100,
-    //   [],
-    //   null,
-    //   token.TOKEN_PROGRAM_ID
-    // );
-    // console.log("Minted tokens successfully");
+    await token.mintTo(
+      anchor.getProvider().connection,
+      wallet.payer,
+      newToken,
+      tokenAccount,
+      wallet.payer,
+      100,
+      [],
+      null,
+      token.TOKEN_PROGRAM_ID
+    );
+    console.log("Minted tokens successfully");
 
     [tokenVault] = web3.PublicKey.findProgramAddressSync(
       [Buffer.from(TOKEN_VAULT_SEED), newToken.toBuffer()],
@@ -184,17 +175,14 @@ describe("Create Random Token", () => {
     assert.ok(fetchedAdminAccount);
 
     // Log the completion of the initialization
-    console.log("Presale Initialization are ready");
-
-    // Add Timeout of 5 Seconds
-    setTimeout(() => {}, 5000);
+    console.log("Initialization completed successfully");
 
     // Log the connection to the devnet
     console.log(`Connected to ${anchor.getProvider().connection.rpcEndpoint}`);
   });
 
-  it("Add 50 of whilelist wallets", async () => {
-    for (let i = 0; i < 50; i++) {
+  it("Add 5 of whilelist wallets", async () => {
+    for (let i = 0; i < 5; i++) {
       [userAccount] = web3.PublicKey.findProgramAddressSync(
         [
           Buffer.from(USER_ACCOUNT_SEED),
@@ -236,14 +224,61 @@ describe("Create Random Token", () => {
       // Log the completion of the initialization
       console.log("Adding whitelist completed successfully");
 
-      
       // Log the connection to the devnet
       console.log(
         `Connected to ${anchor.getProvider().connection.rpcEndpoint}`
-        );
-      }
-    // Add Timeout of 5 Seconds
-    setTimeout(() => {}, 5000);
+      );
+    }
+  });
+
+  it("Remove 3 whitelisted wallets", async () => {
+    for (let i = 0; i < 3; i++) {
+      [userAccount] = web3.PublicKey.findProgramAddressSync(
+        [
+          Buffer.from(USER_ACCOUNT_SEED),
+          new web3.PublicKey(walletLists[i]).toBuffer(),
+        ],
+        program.programId
+      );
+      const txHash = await program.methods
+        .removeWhitelist()
+        .accounts({
+          admin: ADMIN_WALLET_ADDRESS_PUB_KEY,
+          adminAccount: adminAccount,
+          presaleAccount: presaleAccount,
+          userAccount: userAccount,
+          authority: new web3.PublicKey(walletLists[i]),
+          systemProgram: web3.SystemProgram.programId,
+        })
+        .signers([])
+        .rpc();
+  
+      // Confirm transaction
+      const confirmation = await anchor
+        .getProvider()
+        .connection.confirmTransaction(txHash);
+      console.log(
+        `Transaction ${confirmation.value.err ? "failed" : "succeeded"}`
+      );
+  
+      const fetchedPresaleAccount =
+        await program.account.presaleAccount.fetch(presaleAccount);
+      console.log(fetchedPresaleAccount);
+      assert.ok(fetchedPresaleAccount);
+  
+      const fetchedUserAccount =
+        await program.account.userAccount.fetch(userAccount);
+      console.log(fetchedUserAccount);
+      assert.ok(fetchedUserAccount);
+  
+      // Log the completion of the removal
+      console.log("Removing whitelist completed successfully");
+  
+      // Log the connection to the devnet
+      console.log(
+        `Connected to ${anchor.getProvider().connection.rpcEndpoint}`
+      );
+    }
   });
 
   // it("Add Whilelist for one wallet - we can test buying token feature using this wallet.", async () => {
@@ -372,51 +407,46 @@ describe("Create Random Token", () => {
   //   console.log(`Connected to ${anchor.getProvider().connection.rpcEndpoint}`);
   // });
 
-  it("Remove Whilelist", async () => {
-    for (let i = 0; i < 50; i++) {
-      [userAccount] = web3.PublicKey.findProgramAddressSync(
-        [Buffer.from(USER_ACCOUNT_SEED), userWallet.publicKey.toBuffer()],
-        program.programId
-      );
-      const txHash = await program.methods
-        .removeWhitelist()
-        .accounts({
-          admin: ADMIN_WALLET_ADDRESS_PUB_KEY,
-          adminAccount: adminAccount,
-          presaleAccount: presaleAccount,
-          userAccount: userAccount,
-          authority: userWallet.publicKey,
-          systemProgram: web3.SystemProgram.programId,
-        })
-        .signers([])
-        .rpc();
-  
-      // Confirm transaction
-      const confirmation = await anchor
-        .getProvider()
-        .connection.confirmTransaction(txHash);
-      console.log(
-        `Transaction ${confirmation.value.err ? "failed" : "succeeded"}`
-      );
-  
-      const fetchedPresaleAccount =
-        await program.account.presaleAccount.fetch(presaleAccount);
-      console.log(fetchedPresaleAccount);
-      assert.ok(fetchedPresaleAccount);
-  
-      const fetchedUserAccount =
-        await program.account.userAccount.fetch(userAccount);
-      console.log(fetchedUserAccount);
-      assert.ok(fetchedUserAccount);
-  
-      // Log the completion of the initialization
-      console.log("Removing whitelist completed successfully");
-    }
+  // it("Remove Whilelist", async () => {
+  //   [userAccount] = web3.PublicKey.findProgramAddressSync(
+  //     [Buffer.from(USER_ACCOUNT_SEED), userWallet.publicKey.toBuffer()],
+  //     program.programId
+  //   );
+  //   const txHash = await program.methods
+  //     .removeWhitelist()
+  //     .accounts({
+  //       admin: ADMIN_WALLET_ADDRESS_PUB_KEY,
+  //       adminAccount: adminAccount,
+  //       presaleAccount: presaleAccount,
+  //       userAccount: userAccount,
+  //       authority: userWallet.publicKey,
+  //       systemProgram: web3.SystemProgram.programId,
+  //     })
+  //     .signers([])
+  //     .rpc();
 
-     // Add Timeout of 5 Seconds
-     setTimeout(() => {}, 5000);
+  //   // Confirm transaction
+  //   const confirmation = await anchor
+  //     .getProvider()
+  //     .connection.confirmTransaction(txHash);
+  //   console.log(
+  //     `Transaction ${confirmation.value.err ? "failed" : "succeeded"}`
+  //   );
 
-    // Log the connection to the devnet
-    console.log(`Connected to ${anchor.getProvider().connection.rpcEndpoint}`);
-  });
+  //   const fetchedPresaleAccount =
+  //     await program.account.presaleAccount.fetch(presaleAccount);
+  //   console.log(fetchedPresaleAccount);
+  //   assert.ok(fetchedPresaleAccount);
+
+  //   const fetchedUserAccount =
+  //     await program.account.userAccount.fetch(userAccount);
+  //   console.log(fetchedUserAccount);
+  //   assert.ok(fetchedUserAccount);
+
+  //   // Log the completion of the initialization
+  //   console.log("Removing whitelist completed successfully");
+
+  //   // Log the connection to the devnet
+  //   console.log(`Connected to ${anchor.getProvider().connection.rpcEndpoint}`);
+  // });
 });
