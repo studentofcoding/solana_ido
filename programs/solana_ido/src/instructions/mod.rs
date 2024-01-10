@@ -8,7 +8,7 @@ pub mod initialize;
 pub mod refund_token;
 pub mod remove_whitelist;
 // pub mod set_whitelist;
-pub mod update_presale_period;
+pub mod update_presale_details;
 pub mod withdraw;
 pub mod withdraw_token;
 
@@ -22,6 +22,6 @@ pub use initialize::*;
 pub use refund_token::*;
 pub use remove_whitelist::*;
 // pub use set_whitelist::*;
-pub use update_presale_period::*;
+pub use update_presale_details::*;
 pub use withdraw::*;
 pub use withdraw_token::*;

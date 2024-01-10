@@ -30,6 +30,9 @@ pub struct BuyToken<'info> {
 //amount in SOL
 #[access_control(is_presale_live(&ctx.accounts.presale_account))]
 pub fn handler(ctx: Context<BuyToken>, amount: u64) -> Result<()> {
+    if ctx.accounts.presale_account.is_cancelled == 1 {
+        return Err(error!(ErrorCode::PresaleCancelled));
+    }
     if ctx.accounts.user_account.is_whitelisted == false {
         return Err(error!(ErrorCode::NotInWhiteList));
     }

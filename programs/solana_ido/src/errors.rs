@@ -12,6 +12,8 @@ pub enum ErrorCode {
     NoEnoughSol,
     #[msg("This presale is not finished yet.")]
     PresaleNotFinished,
+    #[msg("This presale is cancelled.")]
+    PresaleCancelled,
     #[msg("This presale is not cancelled.")]
     PresaleNotCancelled,
     #[msg("This presale is not started yet.")]

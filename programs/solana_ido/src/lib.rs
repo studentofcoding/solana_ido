@@ -38,13 +38,15 @@ mod token_presale {
         cancel_presale::handler(ctx)
     }
 
-    pub fn update_presale_period(
-        ctx: Context<UpdatePresalePeriod>,
+    // Handle update presale details
+    pub fn update_presale_details(
+        ctx: Context<UpdatePresaleDetails>,
         price: u64,
         start_time: u64,
         end_time: u64,
+        // token_allocation: u64,
     ) -> Result<()> {
-        update_presale_period::handler(ctx, price, start_time, end_time)
+        update_presale_details::handler(ctx, price, start_time, end_time)
     }
 
     // pub fn set_whitelist(ctx: Context<SetWhitelist>, has_whitelist: u8) -> Result<()> {

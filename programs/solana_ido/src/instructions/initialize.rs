@@ -1,6 +1,8 @@
 use anchor_spl::token::{Mint, Token, TokenAccount};
 use {anchor_lang::prelude::*, crate::state::*};
 
+
+// These are the Accounts to hold Vault and details
 #[derive(Accounts)]
 pub struct Initialize<'info> {
     // #[account(

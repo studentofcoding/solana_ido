@@ -1,7 +1,7 @@
 use {crate::account, crate::errors::ErrorCode, crate::state::*, anchor_lang::prelude::*};
 
 #[derive(Accounts)]
-pub struct UpdatePresalePeriod<'info> {
+pub struct UpdatePresaleDetails<'info> {
     #[account(
         mut,
         seeds = [ PRESALE_INFO_SEED.as_bytes() ],
@@ -18,7 +18,7 @@ pub struct UpdatePresalePeriod<'info> {
 
 #[access_control(is_admin(&ctx.accounts.admin_account, &ctx.accounts.admin))]
 pub fn handler(
-    ctx: Context<UpdatePresalePeriod>,
+    ctx: Context<UpdatePresaleDetails>,
     price: u64,
     start_time: u64,
     end_time: u64,

@@ -64,7 +64,7 @@ pub struct RefundToken {
 }
 
 #[event]
-pub struct UpdatePresalePeriod {
+pub struct UpdatePresaleDetails {
     pub start_time: u32,
     pub end_time: u32,
     pub time_stamp: u32,
