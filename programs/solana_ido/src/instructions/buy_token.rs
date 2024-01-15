@@ -73,6 +73,7 @@ pub fn handler(ctx: Context<BuyToken>, amount: u64) -> Result<()> {
     // Update the user account with the number of tokens they will receive.
     ctx.accounts.user_account.user_buy_amount += tokens_to_allocate;
 
+    ctx.accounts.presale_account.users_bought.push(ctx.accounts.authority.key().to_string());
     emit!(UserBought {
         user: *ctx.accounts.authority.key,
         amount: amount,

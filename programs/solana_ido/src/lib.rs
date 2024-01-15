@@ -34,8 +34,8 @@ mod token_presale {
         claim_token::handler(ctx, nonce_vault, token_vault_bump, presale_account_bump)
     }
 
-    pub fn cancel_presale(ctx: Context<CancelPresale>) -> Result<()> {
-        cancel_presale::handler(ctx)
+    pub fn cancel_presale(ctx: Context<CancelPresale>, amount: u64, idx: u64) -> Result<()> {
+        cancel_presale::handler(ctx, amount, idx)
     }
 
     // Handle update presale details
@@ -76,4 +76,5 @@ mod token_presale {
     pub fn withdraw(ctx: Context<Withdraw>) -> Result<()> {
         withdraw::handler(ctx)
     }
+
 }

@@ -40,6 +40,9 @@ pub struct PresaleAccount {
     pub total_token_amount: u64,
     pub is_finalized: u8,
     pub is_cancelled: u8,
+    pub soft_cap: u64,
+    pub softcap: u64,
+    pub users_bought: Vec<String>
 }
 
 #[event]

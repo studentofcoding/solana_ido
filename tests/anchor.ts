@@ -2,6 +2,7 @@ import BN from "bn.js";
 import assert from "assert";
 import * as web3 from "@solana/web3.js";
 import * as token from "@solana/spl-token";
+import base58 from "base58";
 const SOLANA = require("@solana/web3.js");
 const { Connection, PublicKey, LAMPORTS_PER_SOL, clusterApiUrl } = SOLANA;
 import NodeWallet from "@coral-xyz/anchor/dist/cjs/nodewallet";
@@ -34,6 +35,7 @@ let adminAccount: web3.PublicKey;
 let escrowAccount: web3.PublicKey;
 let presaleAccount: web3.PublicKey;
 let userAccount: web3.PublicKey;
+// let teamWallet = web3.Keypair.fromSecretKey(base58.decode("EZht1RnKvKkiYhB9jUtdSpuui19j6Rj6YqnC1mX6AHd2sLwTpi6CjfHDw15KFeufDNoALs9ZZ3xz96gGn5br6k9"));
 let teamWallet = web3.Keypair.generate();
 let buyerDummyWallet = web3.Keypair.generate();
 const program = anchor.workspace.TokenPresale as anchor.Program<TokenPresale>;
@@ -482,15 +484,41 @@ describe("Buying tokens from buyerDummyWallet", () => {
 
 describe("Cancel the Presale", () => {
   it("Cancel Presale", async () => {
-    const txHash = await program.methods
-      .cancelPresale()
+    [presaleAccount] = web3.PublicKey.findProgramAddressSync(
+      [Buffer.from(PRESALE_INFO_SEED)],
+      program.programId
+    );
+    [adminAccount] = web3.PublicKey.findProgramAddressSync(
+      [Buffer.from(ADMIN_MANAGE_SEED), wallet.publicKey.toBuffer()],
+      program.programId
+    );
+    const fetchedPresaleAccount =
+      await program.account.presaleAccount.fetch(presaleAccount);
+
+      console.log(fetchedPresaleAccount);
+    assert.ok(fetchedPresaleAccount);
+
+    let usersBought = fetchedPresaleAccount.usersBought;
+
+    for(let i = 0; i < usersBought.length; i++) {
+      const userPubkey = new web3.PublicKey(usersBought[i]);
+      [userAccount] = web3.PublicKey.findProgramAddressSync(
+        [Buffer.from(USER_ACCOUNT_SEED), userPubkey.toBuffer()],
+        program.programId
+      );
+
+      const txHash = await program.methods
+      .cancelPresale(new BN(usersBought.length), new BN(i))
       .accounts({
-        admin: ADMIN_WALLET_ADDRESS_PUB_KEY,
-        adminAccount: adminAccount,
-        presaleAccount: presaleAccount,
+        presaleAccount,
+        userAccount,
+        escrowAccount,
+        adminAccount,
+        recipient: userPubkey,
+        admin: buyerDummyWallet.publicKey,
         systemProgram: web3.SystemProgram.programId,
       })
-      .signers([])
+      .signers([buyerDummyWallet])
       .rpc();
 
     // Confirm transaction
@@ -499,18 +527,30 @@ describe("Cancel the Presale", () => {
       .connection.confirmTransaction(txHash);
     console.log(
       `Transaction ${confirmation.value.err ? "failed" : "succeeded"}`
-    );
+    ); 
+    }
+    // const txHash = await program.methods
+    //   .cancelPresale()
+    //   .accounts({
+    //     admin: ADMIN_WALLET_ADDRESS_PUB_KEY,
+    //     adminAccount: adminAccount,
+    //     presaleAccount: presaleAccount,
+    //     systemProgram: web3.SystemProgram.programId,
+    //   })
+    //   .signers([])
+    //   .rpc();
 
-    const fetchedPresaleAccount =
-      await program.account.presaleAccount.fetch(presaleAccount);
-    console.log(fetchedPresaleAccount);
-    assert.ok(fetchedPresaleAccount);
+    // // Confirm transaction
+    // const confirmation = await anchor
+    //   .getProvider()
+    //   .connection.confirmTransaction(txHash);
+    // console.log(
+    //   `Transaction ${confirmation.value.err ? "failed" : "succeeded"}`
+    // );
 
     // Log the completion of cancel presale
     console.log("Presale are cancelled");
 
-    // Log the connection
-    console.log(`Connected to ${anchor.getProvider().connection.rpcEndpoint}`);
   })
 });
 
