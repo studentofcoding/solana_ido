@@ -159,7 +159,7 @@ describe("Initialize Presale Vault with the Token", () => {
     console.log("Minted tokens successfully");
 
     [tokenVault] = web3.PublicKey.findProgramAddressSync(
-      [Buffer.from(TOKEN_VAULT_SEED), newToken.toBuffer()],
+      [newToken.toBuffer(), Buffer.from(TOKEN_VAULT_SEED)],
       program.programId
     );
     [adminAccount] = web3.PublicKey.findProgramAddressSync(
@@ -176,7 +176,16 @@ describe("Initialize Presale Vault with the Token", () => {
     );
 
     const txHash = await program.methods
-      .initialize()
+      .initialize(
+        1000,
+        new BN(10),
+        new BN(5000),
+        new BN(864000),
+        new BN(500000),
+        new BN(100000),
+        2500,
+        5000,
+      )
       .accounts({
         admin: ADMIN_WALLET_ADDRESS_PUB_KEY,
         tokenMint: newToken,

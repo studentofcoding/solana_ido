@@ -8,13 +8,20 @@ use {anchor_lang::prelude::*, instructions::*};
 
 // This is your program's public key and it will update
 // automatically when you build the project.
-declare_id!("GHSSaHJcoGXjdP21Xjqvz4ZMcMnQPNCnneWecEBFzfNR");
+declare_id!("8dd23xknPE8fvtcveXgDjSNhD8Zf2wAdGe9fHrXR7cNb");
 
 #[program]
 mod token_presale {
     use super::*;
-    pub fn initialize(ctx: Context<Initialize>) -> Result<()> {
-        initialize::handler(ctx)
+    pub fn initialize(ctx: Context<Initialize>, team_percent: u32, 
+        presale_rate: u64,
+        user_max_buy: u64,
+        presale_duration: u64,
+        price: u64,
+        total_token_amount: u64,
+        soft_cap: u32,
+        token_allocation: u32,) -> Result<()> {
+        initialize::handler(ctx, team_percent, presale_rate, user_max_buy, presale_duration, price,total_token_amount, soft_cap, token_allocation)
     }
 
     pub fn buy_token(ctx: Context<BuyToken>, amount: u64) -> Result<()> {
