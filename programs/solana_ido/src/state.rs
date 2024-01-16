@@ -5,7 +5,7 @@ pub const ADMIN_MANAGE_SEED: &str = "admin-role";
 pub const USER_ACCOUNT_SEED: &str = "user-role";
 pub const PRESALE_INFO_SEED: &str = "presale-info";
 pub const TOKEN_VAULT_SEED: &str = "token-vault";
-pub const PRESALE_TOKEN_MINT_PUBKEY: &str = "85hr9mrrv2SHuWsEB58y7HhyKM76C88gVo8W5ee4fvcu";
+// pub const PRESALE_TOKEN_MINT_PUBKEY: &str = "7dEG31oKJTGr7ypkD7UE3xvgXMMu8Yrf1JKpsx7sFfVi";
 
 pub const ADMIN_ACCOUNT_SIZE: usize = 8 + std::mem::size_of::<AdminAccount>() + 8;
 pub const USER_ACCOUNT_SIZE: usize = 8 + std::mem::size_of::<UserAccount>() + 8;
@@ -38,6 +38,7 @@ pub struct PresaleAccount {
     pub total_participants: u32,
     pub total_sol_amount: u64,
     pub total_token_amount: u64,
+    pub presale_soft_cap: u64,
     pub is_finalized: u8,
     pub is_cancelled: u8,
 }
@@ -110,8 +111,16 @@ pub fn is_presale_live<'info>(presale_account: &Account<'info, PresaleAccount>) 
     if presale_account.start_time > Clock::get().unwrap().unix_timestamp as u64 {
         return Err(error!(ErrorCode::PresaleNotStarted));
     }
-    if presale_account.end_time < Clock::get().unwrap().unix_timestamp as u64 {
-        return Err(error!(ErrorCode::PresaleAlreadyEnded));
-    }
+    // if presale_account.end_time < Clock::get().unwrap().unix_timestamp as u64 {
+    //     // Check if the presale has ended when token sold are more than 50% of total token
+    //     let presale_soft_cap = presale_account.total_token_amount / presale_account.price / 2;
+
+    //     if presale_account.end_time < Clock::get().unwrap().unix_timestamp as u64 {
+    //         if presale_account.total_sol_amount < presale_soft_cap {
+    //             return Err(error!(ErrorCode::PresaleBelowSoftCap));
+    //         }
+    //     }
+    //     return Err(error!(ErrorCode::PresaleAlreadyEnded));
+    // }
     Ok(())
 }

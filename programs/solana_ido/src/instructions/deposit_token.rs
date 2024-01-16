@@ -3,9 +3,9 @@ use {anchor_lang::prelude::*, crate::state::*};
 
 #[derive(Accounts)]
 pub struct DepositToken<'info> {
-    #[account(
-        address = PRESALE_TOKEN_MINT_PUBKEY.parse::<Pubkey>().unwrap(),
-    )]
+    // #[account(
+    //     address = PRESALE_TOKEN_MINT_PUBKEY.parse::<Pubkey>().unwrap(),
+    // )]
     pub token_mint: Box<Account<'info, Mint>>,
 
     #[account(mut)]

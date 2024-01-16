@@ -13,7 +13,10 @@ declare_id!("GHSSaHJcoGXjdP21Xjqvz4ZMcMnQPNCnneWecEBFzfNR");
 #[program]
 mod token_presale {
     use super::*;
-    pub fn initialize(ctx: Context<Initialize>) -> Result<()> {
+    pub fn initialize(
+        ctx: Context<Initialize>,
+        // token_mint: Pubkey,
+    ) -> Result<()> {
         initialize::handler(ctx)
     }
 
