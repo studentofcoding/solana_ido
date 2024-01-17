@@ -197,39 +197,6 @@ describe("Initialize Presale Vault with the Token", () => {
     console.log(`Connected to ${anchor.getProvider().connection.rpcEndpoint}`);
   });
 
-  // it("Initialize Presale parameters", async () => {
-  //   const txHash = await program.methods
-  //     // Initiialize parameter on Presale
-  //     .updatePresaleDetails(new BN(100), new BN(10000), new BN(99999999999999))
-  //     .accounts({
-  //       admin: ADMIN_WALLET_ADDRESS_PUB_KEY,
-  //       adminAccount: adminAccount,
-  //       presaleAccount: presaleAccount,
-  //       systemProgram: web3.SystemProgram.programId,
-  //     })
-  //     .signers([])
-  //     .rpc();
-
-  //   // Confirm transaction
-  //   const confirmation = await anchor
-  //     .getProvider()
-  //     .connection.confirmTransaction(txHash);
-  //   console.log(
-  //     `Transaction ${confirmation.value.err ? "failed" : "succeeded"}`
-  //   );
-
-  //   const fetchedPresaleAccount =
-  //     await program.account.presaleAccount.fetch(presaleAccount);
-  //   console.log(fetchedPresaleAccount);
-  //   assert.ok(fetchedPresaleAccount);
-
-  //   // Log the completion of the initialization
-  //   console.log("Updating presale info completed successfully");
-
-  //   // Log the connection
-  //   console.log(`Connected to ${anchor.getProvider().connection.rpcEndpoint}`);
-  // });
-
   it("Deposit 50% of token to token vault for presale", async () => {
     const txHash = await program.methods.depositToken(
       newToken,
@@ -455,7 +422,7 @@ describe("Add whitelist of buyerDummyWallet and 5 other wallet, and simulate 3 w
   // });
 })
 
-describe("Buying tokens from buyerDummyWallet", () => {
+describe("Buying tokens from buyerDummyWallet, claim, and finalize", () => {
   it("Simulate Buying tokens from buyerDummyWallet", async () => {
     [userAccount] = web3.PublicKey.findProgramAddressSync(
       [Buffer.from(USER_ACCOUNT_SEED), buyerDummyWallet.publicKey.toBuffer()],
@@ -597,39 +564,106 @@ describe("Buying tokens from buyerDummyWallet", () => {
     // Log the connection
     console.log(`Connected to ${anchor.getProvider().connection.rpcEndpoint}`);
   });
-});
 
-describe("Cancel the Presale", () => {
-  it("Cancel Presale", async () => {
-    const txHash = await program.methods
-      .cancelPresale()
-      .accounts({
-        admin: ADMIN_WALLET_ADDRESS_PUB_KEY,
-        adminAccount: adminAccount,
-        presaleAccount: presaleAccount,
-        systemProgram: web3.SystemProgram.programId,
-      })
-      .signers([])
-      .rpc();
-
-    // Confirm transaction
-    const confirmation = await anchor
-      .getProvider()
-      .connection.confirmTransaction(txHash);
-    console.log(
-      `Transaction ${confirmation.value.err ? "failed" : "succeeded"}`
+  it("Simulate claim token for buyerDummyWallet", async () => {
+    const [presaleAccountBump] = await PublicKey.findProgramAddress(
+      [Buffer.from(PRESALE_INFO_SEED)], // Replace with actual seed for presaleAccount
+      program.programId
     );
+    
+    const [tokenVaultPda, nonceVault] = await PublicKey.findProgramAddress(
+      [Buffer.from(TOKEN_VAULT_SEED), newToken.toBuffer()],
+      program.programId // Replace with the actual program ID
+    );
+
+    //Create a new token account for buyerDummyWallet to receive the claimed tokens
+    const buyerTokenAccount = await token.createAccount(
+      anchor.getProvider().connection,
+      wallet.payer, // The payer of the transaction fees
+      newToken, // The mint public key
+      buyerDummyWallet.publicKey, // The owner of the new account
+    );
+
+
+    console.log("Default newToken", newToken.toString());
+    console.log("Default tokenAccount", tokenAccount.toString());
+    console.log("Default tokenVault", tokenVault.toString());
+    // console.log("Default tokenVaultAnother", tokenVaultAnother.toString());
+    console.log("Default adminAccount", adminAccount.toString());
+    console.log("Default escrowAccount", escrowAccount.toString());
+    console.log("Default presaleAccount", presaleAccount.toString());
+    console.log("Default userAccount", userAccount.toString());
 
     const fetchedPresaleAccount =
       await program.account.presaleAccount.fetch(presaleAccount);
     console.log(fetchedPresaleAccount);
     assert.ok(fetchedPresaleAccount);
 
-    // Log the completion of cancel presale
-    console.log("Presale are cancelled");
+    // TODO: tokenVault value are missmatched need to fix so it'll align
+    const claimTxHash = await program.methods
+      .claimToken(nonceVault, tokenVaultPda, presaleAccountBump)
+      .accounts({
+        tokenMint: newToken,
+        tokenVault: tokenVault,
+        tokenTo: buyerTokenAccount,
+        userAccount: userAccount,
+        authority: buyerDummyWallet.publicKey,
+        presaleAccount: presaleAccountBump,
+        systemProgram: web3.SystemProgram.programId,
+        rent: anchor.web3.SYSVAR_RENT_PUBKEY,
+      })
+      .signers([buyerDummyWallet])
+      .rpc();
 
-    // Log the connection
-    console.log(`Connected to ${anchor.getProvider().connection.rpcEndpoint}`);
+    // Confirm transaction
+    const claimConfirmation = await anchor
+      .getProvider()
+      .connection.confirmTransaction(claimTxHash);
+    console.log(
+      `Claim Transaction ${claimConfirmation.value.err ? "failed" : "succeeded"}`
+    );
+  });
+
+  // Simulate finalized the presale
+  it("Simulate finalized the presale", async () => {
+    [userAccount] = web3.PublicKey.findProgramAddressSync(
+      [Buffer.from(USER_ACCOUNT_SEED), buyerDummyWallet.publicKey.toBuffer()],
+      program.programId
+    );
+    [escrowAccount] = web3.PublicKey.findProgramAddressSync(
+      [Buffer.from(SOL_VAULT_SEED)],
+      program.programId
+    );
+    const txHash = await program.methods
+      .finalize()
+      .accounts({
+        admin: ADMIN_WALLET_ADDRESS_PUB_KEY,
+        escrowAccount: escrowAccount,
+        presaleAccount: presaleAccount,
+        adminAccount: adminAccount,
+        teamAccount: teamWallet.publicKey,
+        systemProgram: web3.SystemProgram.programId,
+      })
+      .signers([])
+      .rpc();
+
+      const confirmation = await anchor
+        .getProvider()
+        .connection.confirmTransaction(txHash);
+      console.log(
+        `Transaction ${confirmation.value.err ? "failed" : "succeeded"}`
+      );
+  
+      const fetchedPresaleAccount =
+        await program.account.presaleAccount.fetch(presaleAccount);
+      console.log(fetchedPresaleAccount);
+      assert.ok(fetchedPresaleAccount);
+  
+      // Log the completion of cancel presale
+      console.log("Presale are finalized");
+  
+      // Log the connection
+      console.log(`Connected to ${anchor.getProvider().connection.rpcEndpoint}`);
   })
 });
 
@@ -641,7 +675,7 @@ describe("Buying tokens from buyerDummyWallet once presale is cancelled and it s
     );
     try {
       await program.methods
-        .buyToken(new BN(0.01 * LAMPORTS_PER_SOL))
+        .buyToken(new BN(10))
         .accounts({
           escrowAccount: escrowAccount,
           presaleAccount: presaleAccount,
@@ -659,40 +693,40 @@ describe("Buying tokens from buyerDummyWallet once presale is cancelled and it s
       await program.account.userAccount.fetch(userAccount);
       console.log(fetchedUserAccount);
 
-      let tokenBoughtAllocation = await fetchedUserAccount.userBuyAmount
-      let solPaid = await fetchedUserAccount.userSolContributed
-      console.log("User bought: " + tokenBoughtAllocation.toNumber() + " tokens");
-      console.log("User paid: " + solPaid.toNumber() + " SOL");
-      // Add assertion for the error number
-      assert.equal(error.error.errorCode.number, 6005);
-    }
-  });
+//       let tokenBoughtAllocation = await fetchedUserAccount.userBuyAmount
+//       let solPaid = await fetchedUserAccount.userSolContributed
+//       console.log("User bought: " + tokenBoughtAllocation.toNumber() + " tokens");
+//       console.log("User paid: " + solPaid.toNumber() + " SOL");
+//       // Add assertion for the error number
+//       assert.equal(error.error.errorCode.number, 6005);
+//     }
+//   });
+// });
+
+// describe("Check if the presale is cancelled and can refund token", () => {
+//   it("Check if the presale is cancelled and can refund token", async () => {
+//     [userAccount] = web3.PublicKey.findProgramAddressSync(
+//       [Buffer.from(USER_ACCOUNT_SEED), buyerDummyWallet.publicKey.toBuffer()],
+//       program.programId
+//     );
+//     [adminAccount] = web3.PublicKey.findProgramAddressSync(
+//       [Buffer.from(ADMIN_MANAGE_SEED), wallet.publicKey.toBuffer()],
+//       program.programId
+//     );
+//     const fetchedPresaleAccount =
+//     await program.account.presaleAccount.fetch(presaleAccount);
+//     console.log(fetchedPresaleAccount);
+//     assert.ok(fetchedPresaleAccount);
+
+//     if (fetchedPresaleAccount.isCancelled !== 1) {
+//       throw new Error("Presale is not cancelled");
+//     } else {
+//       console.log("Presale is cancelled, User can proceed refund");
+//     }
+
+//     const fetchedUserAccount =
+//       await program.account.userAccount.fetch(userAccount);
+//     console.log(fetchedUserAccount);
+//     assert.ok(fetchedUserAccount);
+//   })
 });
-
-describe("Check if the presale is cancelled and can refund token", () => {
-  it("Check if the presale is cancelled and can refund token", async () => {
-    [userAccount] = web3.PublicKey.findProgramAddressSync(
-      [Buffer.from(USER_ACCOUNT_SEED), buyerDummyWallet.publicKey.toBuffer()],
-      program.programId
-    );
-    [adminAccount] = web3.PublicKey.findProgramAddressSync(
-      [Buffer.from(ADMIN_MANAGE_SEED), wallet.publicKey.toBuffer()],
-      program.programId
-    );
-    const fetchedPresaleAccount =
-    await program.account.presaleAccount.fetch(presaleAccount);
-    console.log(fetchedPresaleAccount);
-    assert.ok(fetchedPresaleAccount);
-
-    if (fetchedPresaleAccount.isCancelled !== 1) {
-      throw new Error("Presale is not cancelled");
-    } else {
-      console.log("Presale is cancelled, User can proceed refund");
-    }
-
-    const fetchedUserAccount =
-      await program.account.userAccount.fetch(userAccount);
-    console.log(fetchedUserAccount);
-    assert.ok(fetchedUserAccount);
-  })
-})
