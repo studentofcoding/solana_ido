@@ -8,7 +8,7 @@ use {anchor_lang::prelude::*, instructions::*};
 
 // This is your program's public key and it will update
 // automatically when you build the project.
-declare_id!("8dd23xknPE8fvtcveXgDjSNhD8Zf2wAdGe9fHrXR7cNb");
+declare_id!("3SR3iCToALQU9yDZ68WnQnB4nJEX4WjykKERSfUKn9Pc");
 
 #[program]
 mod token_presale {
@@ -72,8 +72,8 @@ mod token_presale {
         finalize::handler(ctx)
     }
 
-    pub fn deposit_token(ctx: Context<DepositToken>, amount: u64) -> Result<()> {
-        deposit_token::handler(ctx, amount)
+    pub fn deposit_token(ctx: Context<DepositToken>, mint: Pubkey, amount: u64) -> Result<()> {
+        deposit_token::handler(ctx, mint, amount)
     }
 
     pub fn withdraw_token(ctx: Context<WithdrawToken>, nonce_vault: u8) -> Result<()> {

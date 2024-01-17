@@ -3,11 +3,11 @@ seeds = false
 skip-lint = false
 
 [programs.localnet]
-token_presale = "8dd23xknPE8fvtcveXgDjSNhD8Zf2wAdGe9fHrXR7cNb"
+token_presale = "3SR3iCToALQU9yDZ68WnQnB4nJEX4WjykKERSfUKn9Pc"
 
 
 [programs.devnet]
-token_presale = "8dd23xknPE8fvtcveXgDjSNhD8Zf2wAdGe9fHrXR7cNb"
+token_presale = "3SR3iCToALQU9yDZ68WnQnB4nJEX4WjykKERSfUKn9Pc"
 
 
 [registry]

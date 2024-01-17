@@ -1,4 +1,4 @@
-use anchor_spl::token::{Mint, Token, TokenAccount};
+use anchor_spl::token::{ Mint, Token, TokenAccount};
 use {anchor_lang::prelude::*, crate::state::*};
 
 
@@ -12,7 +12,7 @@ pub struct Initialize<'info> {
     pub token_mint: Box<Account<'info, Mint>>,
 
     #[account(
-        init_if_needed,
+        init,
         payer = admin,
         token::mint = token_mint,
         token::authority = admin, //the PDA address is both the vault account and the authority (and event the mint authority)

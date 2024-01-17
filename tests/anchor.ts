@@ -42,31 +42,6 @@ describe("Preparing SOL to Team Wallet", () => {
   // Configure the client to use the local cluster
   const AIRDROP_AMOUNT = 1 * LAMPORTS_PER_SOL; // 1 SOL
 
-  // it("Airdroping 1 SOL to admin wallet", async () => {
-  //   // Airdrop 2 SOL to the admin account
-  //   console.log(
-  //     `Requesting airdrop for admin wallet - ${ADMIN_WALLET_ADDRESS_STRING}`
-  //   );
-  //   const signature = await SOLANA_CONNECTION.requestAirdrop(
-  //     ADMIN_WALLET_ADDRESS_PUB_KEY,
-  //     AIRDROP_AMOUNT
-  //   );
-  //   const { blockhash, lastValidBlockHeight } =
-  //     await SOLANA_CONNECTION.getLatestBlockhash();
-  //   await SOLANA_CONNECTION.confirmTransaction(
-  //     {
-  //       blockhash,
-  //       lastValidBlockHeight,
-  //       signature,
-  //     },
-  //     "finalized"
-  //   );
-  //   console.log(
-  //     `Airdrop complete with Tx: https://explorer.solana.com/tx/${signature}?cluster=devnet`
-  //   );
-  //   assert.ok(signature);
-  // });
-
   it("Airdroping 1 SOL to Team wallet", async () => {
     // Airdrop 2 SOL to the admin account
     console.log(
@@ -151,13 +126,15 @@ describe("Initialize Presale Vault with the Token", () => {
       newToken,
       tokenAccount,
       wallet.payer,
-      100,
+      100 * 10 ** 9,
       [],
       null,
       token.TOKEN_PROGRAM_ID
     );
     console.log("Minted tokens successfully");
-
+    let tokenAmount = await anchor.getProvider().connection.getTokenAccountBalance(tokenAccount);
+    console.log("🚀 token balance in admin wallet is :", tokenAmount);
+   
     [tokenVault] = web3.PublicKey.findProgramAddressSync(
       [newToken.toBuffer(), Buffer.from(TOKEN_VAULT_SEED)],
       program.programId
@@ -199,7 +176,7 @@ describe("Initialize Presale Vault with the Token", () => {
       })
       .signers([])
       .rpc();
-
+      
     // Confirm transaction
     const confirmation = await anchor
       .getProvider()
@@ -215,25 +192,62 @@ describe("Initialize Presale Vault with the Token", () => {
 
     // Log the completion of the initialization
     console.log("Initialization completed successfully");
-
+    
     // Log the connection
     console.log(`Connected to ${anchor.getProvider().connection.rpcEndpoint}`);
   });
 
-  it("Initialize Presale parameters", async () => {
-    const txHash = await program.methods
-      // Initiialize parameter on Presale
-      .updatePresaleDetails(new BN(100), new BN(10000), new BN(99999999999999))
-      .accounts({
-        admin: ADMIN_WALLET_ADDRESS_PUB_KEY,
-        adminAccount: adminAccount,
-        presaleAccount: presaleAccount,
-        systemProgram: web3.SystemProgram.programId,
-      })
-      .signers([])
-      .rpc();
+  // it("Initialize Presale parameters", async () => {
+  //   const txHash = await program.methods
+  //     // Initiialize parameter on Presale
+  //     .updatePresaleDetails(new BN(100), new BN(10000), new BN(99999999999999))
+  //     .accounts({
+  //       admin: ADMIN_WALLET_ADDRESS_PUB_KEY,
+  //       adminAccount: adminAccount,
+  //       presaleAccount: presaleAccount,
+  //       systemProgram: web3.SystemProgram.programId,
+  //     })
+  //     .signers([])
+  //     .rpc();
 
-    // Confirm transaction
+  //   // Confirm transaction
+  //   const confirmation = await anchor
+  //     .getProvider()
+  //     .connection.confirmTransaction(txHash);
+  //   console.log(
+  //     `Transaction ${confirmation.value.err ? "failed" : "succeeded"}`
+  //   );
+
+  //   const fetchedPresaleAccount =
+  //     await program.account.presaleAccount.fetch(presaleAccount);
+  //   console.log(fetchedPresaleAccount);
+  //   assert.ok(fetchedPresaleAccount);
+
+  //   // Log the completion of the initialization
+  //   console.log("Updating presale info completed successfully");
+
+  //   // Log the connection
+  //   console.log(`Connected to ${anchor.getProvider().connection.rpcEndpoint}`);
+  // });
+
+  it("Deposit 50% of token to token vault for presale", async () => {
+    const txHash = await program.methods.depositToken(
+      newToken,
+      new BN(50 * 10 ** 9)
+    )
+    .accounts({
+      tokenMint: newToken,
+      tokenFrom: tokenAccount,
+      tokenVault: tokenVault,
+      adminAccount: adminAccount,
+      presaleAccount: presaleAccount,
+      admin: ADMIN_WALLET_ADDRESS_PUB_KEY,
+      tokenProgram: token.TOKEN_PROGRAM_ID,
+      systemProgram: web3.SystemProgram.programId,
+      })
+    .signers([])
+    .rpc();
+
     const confirmation = await anchor
       .getProvider()
       .connection.confirmTransaction(txHash);
@@ -241,17 +255,15 @@ describe("Initialize Presale Vault with the Token", () => {
       `Transaction ${confirmation.value.err ? "failed" : "succeeded"}`
     );
 
-    const fetchedPresaleAccount =
-      await program.account.presaleAccount.fetch(presaleAccount);
-    console.log(fetchedPresaleAccount);
-    assert.ok(fetchedPresaleAccount);
-
-    // Log the completion of the initialization
-    console.log("Updating presale info completed successfully");
-
+    let tokenAmount = await anchor.getProvider().connection.getTokenAccountBalance(tokenAccount);
+    let tokenVaultBalance = await anchor.getProvider().connection.getTokenAccountBalance(tokenVault);
+    console.log("🚀 After initialization, token balance in admin wallet is :", tokenAmount);
+    console.log("🚀 And tokenVaultBalance:", tokenVaultBalance);
+    
     // Log the connection
     console.log(`Connected to ${anchor.getProvider().connection.rpcEndpoint}`);
   });
+
 });
 
 describe("Add whitelist of buyerDummyWallet and 5 other wallet, and simulate 3 wallet remove from whitelist", () => {

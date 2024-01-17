@@ -2,9 +2,11 @@ use anchor_spl::token::{self, Mint, Token, TokenAccount};
 use {anchor_lang::prelude::*, crate::state::*};
 
 #[derive(Accounts)]
+#[instruction(mint: Pubkey)]
 pub struct DepositToken<'info> {
     #[account(
-        address = PRESALE_TOKEN_MINT_PUBKEY.parse::<Pubkey>().unwrap(),
+        // address = PRESALE_TOKEN_MINT_PUBKEY.parse::<Pubkey>().unwrap(),
+        address = mint
     )]
     pub token_mint: Box<Account<'info, Mint>>,
 
@@ -14,7 +16,7 @@ pub struct DepositToken<'info> {
 
     #[account(
         mut,
-        seeds = [ token_mint.key().as_ref() ],
+        seeds = [ token_mint.key().as_ref(), TOKEN_VAULT_SEED.as_bytes() ],
         bump,
     )]
     pub token_vault: Box<Account<'info, TokenAccount>>,
@@ -35,7 +37,7 @@ pub struct DepositToken<'info> {
 }
 
 #[access_control(is_admin(&ctx.accounts.admin_account, &ctx.accounts.admin))]
-pub fn handler(ctx: Context<DepositToken>, amount: u64) -> Result<()> {
+pub fn handler(ctx: Context<DepositToken>, _mint:Pubkey, amount: u64) -> Result<()> {
     //transfer the admin tokens to the vault
     let cpi_ctx = CpiContext::new(
         ctx.accounts.token_program.to_account_info(),
