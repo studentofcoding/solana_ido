@@ -13,15 +13,18 @@ declare_id!("3SR3iCToALQU9yDZ68WnQnB4nJEX4WjykKERSfUKn9Pc");
 #[program]
 mod token_presale {
     use super::*;
-    pub fn initialize(ctx: Context<Initialize>, team_percent: u32, 
+    pub fn initialize(
+        ctx: Context<Initialize>, 
+        team_percent: u32, 
         presale_rate: u64,
         user_max_buy: u64,
         presale_duration: u64,
         price: u64,
         total_token_amount: u64,
-        soft_cap: u32,
-        token_allocation: u32,) -> Result<()> {
-        initialize::handler(ctx, team_percent, presale_rate, user_max_buy, presale_duration, price,total_token_amount, soft_cap, token_allocation)
+        token_allocation: u32,
+        softcap_precent: u32
+    ) -> Result<()> {
+        initialize::handler(ctx, team_percent, presale_rate, user_max_buy, presale_duration, price,total_token_amount, token_allocation, softcap_precent)
     }
 
     pub fn buy_token(ctx: Context<BuyToken>, amount: u64) -> Result<()> {

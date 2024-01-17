@@ -28,4 +28,8 @@ pub enum ErrorCode {
     WrongTimePeriod,
     #[msg("You are not in white list.")]
     NotInWhiteList,
+    #[msg("Maximum buying amount exceeded.")]
+    MaxBuyAmountExceeded,
+    #[msg("Token balance in token vault is not enough.")]
+    NotEnoughTokenInVault,
 }

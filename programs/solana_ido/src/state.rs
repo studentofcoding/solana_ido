@@ -14,7 +14,7 @@ pub const PRESALE_TOKEN_MINT_PUBKEY: &str = "85hr9mrrv2SHuWsEB58y7HhyKM76C88gVo8
 pub const ADMIN_ACCOUNT_SIZE: usize = 8 + 32;           // 40 bytes
 pub const USER_ACCOUNT_SIZE: usize = 8 + 1 + 8 + 8 + 1; // 26 bytes
 pub const PRESALE_ACCOUNT_SIZE: usize 
-    = 8 + 4 + 8 + 4 + 8 + 8 + 8 + 8 + 8 + 4 + 8 + 8 + 1 + 1 + 4 + 4 + 4 + 4;    // 94 bytes
+    = 8 + 4 + 8 + 4 + 8 + 8 + 8 + 8 + 8 + 4 + 8 + 8 + 1 + 1 + 8 + 4 + 1 + 1;    // 100 bytes
 
 #[account]
 pub struct AdminAccount {
@@ -45,10 +45,12 @@ pub struct PresaleAccount {
     pub total_token_amount: u64,        // 8 byte
     pub is_finalized: u8,               // 1 byte
     pub is_cancelled: u8,               // 1 byte
-    pub soft_cap: u32,                  // 4 byte
+    pub soft_cap: u64,                  // 8 byte
     pub token_allocation: u32,          // 4 byte   5000 (50% of total token amount)
-    pub white_list: Vec<String>,        // 4 + 0 byte
-    pub users_bought: Vec<String>,      // 4 + 0 byte   String is pubkey 32byte
+    // pub white_list: Vec<String>,        // 4 + 0 byte
+    // pub users_bought: Vec<String>,      // 4 + 0 byte   String is pubkey 32byte
+    pub is_hardcapped: u8,              // 1 byte
+    pub is_softcapped: u8,              // 1 byte
 }
 
 #[event]

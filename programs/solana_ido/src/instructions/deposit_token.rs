@@ -54,6 +54,6 @@ pub fn handler(ctx: Context<DepositToken>, _mint:Pubkey, amount: u64) -> Result<
             (ctx.accounts.presale_account.total_token_amount + amount)
                 / ctx.accounts.presale_account.total_sol_amount;
     }
-    ctx.accounts.presale_account.total_token_amount += amount;
+    // ctx.accounts.presale_account.total_token_amount += amount;
     Ok(())
 }
