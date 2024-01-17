@@ -667,6 +667,40 @@ describe("Buying tokens from buyerDummyWallet, claim, and finalize", () => {
   })
 });
 
+describe("Cancel the Presale", () => {
+  it("Cancel Presale", async () => {
+    const txHash = await program.methods
+      .cancelPresale()
+      .accounts({
+        admin: ADMIN_WALLET_ADDRESS_PUB_KEY,
+        adminAccount: adminAccount,
+        presaleAccount: presaleAccount,
+        systemProgram: web3.SystemProgram.programId,
+      })
+      .signers([])
+      .rpc();
+
+    // Confirm transaction
+    const confirmation = await anchor
+      .getProvider()
+      .connection.confirmTransaction(txHash);
+    console.log(
+      `Transaction ${confirmation.value.err ? "failed" : "succeeded"}`
+    );
+
+    const fetchedPresaleAccount =
+      await program.account.presaleAccount.fetch(presaleAccount);
+    console.log(fetchedPresaleAccount);
+    assert.ok(fetchedPresaleAccount);
+
+    // Log the completion of cancel presale
+    console.log("Presale are cancelled");
+
+    // Log the connection
+    console.log(`Connected to ${anchor.getProvider().connection.rpcEndpoint}`);
+  })
+});
+
 describe("Buying tokens from buyerDummyWallet once presale is cancelled and it should Error from Smart Contract", () => {
   it("Simulate Buying tokens from buyerDummyWallet once presale is cancelled and it should not proceed", async () => {
     [userAccount] = web3.PublicKey.findProgramAddressSync(
