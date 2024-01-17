@@ -692,7 +692,7 @@ describe("Buying tokens from buyerDummyWallet once presale is cancelled and it s
       const fetchedUserAccount =
       await program.account.userAccount.fetch(userAccount);
       console.log(fetchedUserAccount);
-
+    }
 //       let tokenBoughtAllocation = await fetchedUserAccount.userBuyAmount
 //       let solPaid = await fetchedUserAccount.userSolContributed
 //       console.log("User bought: " + tokenBoughtAllocation.toNumber() + " tokens");
@@ -728,5 +728,5 @@ describe("Buying tokens from buyerDummyWallet once presale is cancelled and it s
 //       await program.account.userAccount.fetch(userAccount);
 //     console.log(fetchedUserAccount);
 //     assert.ok(fetchedUserAccount);
-//   })
+  })
 });
