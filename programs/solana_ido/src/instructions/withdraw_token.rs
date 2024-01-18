@@ -44,11 +44,11 @@ pub fn handler(ctx: Context<WithdrawToken>, _nonce_vault: u8) -> Result<()> {
     let amount = ctx.accounts.token_vault.amount;
     //transfer from vault to admin
     let cpi_ctx = CpiContext::new(
-        ctx.accounts.token_program.to_account_info(),
+        ctx.accounts.token_program.clone().to_account_info(),
         token::Transfer {
-            from: ctx.accounts.token_vault.to_account_info(),
-            to: ctx.accounts.token_to.to_account_info(),
-            authority: ctx.accounts.token_vault.to_account_info(),
+            from: ctx.accounts.token_vault.to_account_info().clone(),
+            to: ctx.accounts.token_to.to_account_info().clone(),
+            authority: ctx.accounts.admin.to_account_info().clone(),
         },
         // signer,
     );
