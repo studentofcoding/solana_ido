@@ -12,7 +12,7 @@ pub const PRESALE_TOKEN_MINT_PUBKEY: &str = "85hr9mrrv2SHuWsEB58y7HhyKM76C88gVo8
 // pub const PRESALE_ACCOUNT_SIZE: usize = 8 + std::mem::size_of::<PresaleAccount>() + 8;
 
 pub const ADMIN_ACCOUNT_SIZE: usize = 8 + 32;           // 40 bytes
-pub const USER_ACCOUNT_SIZE: usize = 8 + 1 + 8 + 8 + 1; // 26 bytes
+pub const USER_ACCOUNT_SIZE: usize = 8 + 1 + 8 + 8 + 1 + 32; // 58 bytes
 pub const PRESALE_ACCOUNT_SIZE: usize 
     = 8 + 4 + 8 + 4 + 8 + 8 + 8 + 8 + 8 + 4 + 8 + 8 + 1 + 1 + 8 + 4 + 1 + 1;    // 100 bytes
 
@@ -28,6 +28,7 @@ pub struct UserAccount {
     pub user_buy_amount: u64,       // 8 byte
     pub user_sol_contributed: u64,  // 8 byte
     pub is_claimed: u8,             // 1 byte
+    pub public_key: Pubkey,         // 32 byte
 }
 
 #[account]

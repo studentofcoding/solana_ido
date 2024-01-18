@@ -1,20 +1,20 @@
 use anchor_spl::token::{self, Mint, Token, TokenAccount};
-use {anchor_lang::prelude::*, crate::account, crate::errors::ErrorCode, crate::state::*};
+use {crate::account, crate::errors::ErrorCode, crate::state::*, anchor_lang::prelude::*};
 
 #[derive(Accounts)]
 pub struct ClaimToken<'info> {
     #[account(
-        address = PRESALE_TOKEN_MINT_PUBKEY.parse::<Pubkey>().unwrap(),
+        mut
+        // address = PRESALE_TOKEN_MINT_PUBKEY.parse::<Pubkey>().unwrap(),
     )]
     pub token_mint: Box<Account<'info, Mint>>,
 
     #[account(mut)]
-    //the token account to withdraw to
     pub token_to: Box<Account<'info, TokenAccount>>,
 
     #[account(
         mut,
-        seeds = [ token_mint.key().as_ref() ],
+        seeds = [ token_mint.key().as_ref(), TOKEN_VAULT_SEED.as_bytes() ],
         bump,
     )]
     pub token_vault: Box<Account<'info, TokenAccount>>,
@@ -27,54 +27,51 @@ pub struct ClaimToken<'info> {
     pub presale_account: Box<Account<'info, PresaleAccount>>,
     #[account(
         mut,
-        // init_if_needed,
-        // payer = authority,
-        seeds = [ USER_ACCOUNT_SEED.as_bytes(), authority.key().as_ref() ],
+        seeds = [ USER_ACCOUNT_SEED.as_bytes(), user_to.key().as_ref() ],
         bump
-        // space = USER_ACCOUNT_SIZE
     )]
     pub user_account: Box<Account<'info, UserAccount>>,
     // the authority allowed to transfer token
     #[account(mut)]
+    /// CHECK: we send token to user
+    pub user_to: UncheckedAccount<'info>,
     pub authority: Signer<'info>,
-    pub system_program: Program<'info, System>,
     pub token_program: Program<'info, Token>,
     pub rent: Sysvar<'info, Rent>,
-    // pub token_vault_bump: u8,
-    // pub presale_account_bump: u8,
 }
 
-#[access_control(is_finalized(&ctx.accounts.presale_account))]
-pub fn handler(ctx: Context<ClaimToken>, nonce_vault: u8, token_vault_bump: u8, presale_account_bump: u8) -> Result<()> {
-    let token_mint_key = ctx.accounts.token_mint.key();
-    let seeds = &[
-        token_mint_key.as_ref(), 
-        &[nonce_vault], 
-        &[token_vault_bump], 
-        &[presale_account_bump]
-    ];
-    let signer = &[&seeds[..]];
-    let amount =
-        ctx.accounts.presale_account.presale_rate * ctx.accounts.user_account.user_buy_amount;
+// #[access_control(is_finalized(&ctx.accounts.presale_account))]
+pub fn handler(
+    ctx: Context<ClaimToken>, // , nonce_vault: u8, token_vault_bump: u8, presale_account_bump: u8
+) -> Result<()> {
+   
+    let sender = &mut ctx.accounts.authority;
+    let sender_tokens = &mut ctx.accounts.token_vault;
+    let recipient_tokens = &mut ctx.accounts.token_to;
+    let token_program = &mut ctx.accounts.token_program;
+    let amount = ctx.accounts.user_account.user_buy_amount;
 
     if ctx.accounts.user_account.user_buy_amount <= 0 {
         return Err(error!(ErrorCode::NoClaimableToken));
     }
-
-    if ctx.accounts.token_vault.amount < amount {
+    if ctx.accounts.user_account.is_whitelisted == false {
+        return Err(error!(ErrorCode::NotInWhiteList));
+    }
+    if sender_tokens.amount < amount {
         return Err(error!(ErrorCode::PresaleNotEnoughToken));
     }
-    //transfer from vault to admin
-    let cpi_ctx = CpiContext::new_with_signer(
-        ctx.accounts.token_program.to_account_info(),
-        token::Transfer {
-            from: ctx.accounts.token_vault.to_account_info(),
-            to: ctx.accounts.token_to.to_account_info(),
-            authority: ctx.accounts.token_vault.to_account_info(),
-        },
-        signer,
-    );
-    token::transfer(cpi_ctx, amount)?;
+
+    token::transfer(
+        CpiContext::new(
+            token_program.clone().to_account_info(),
+            token::Transfer {
+                from: sender_tokens.to_account_info().clone(),
+                to: recipient_tokens.to_account_info().clone(),
+                authority: sender.to_account_info().clone(),
+            },
+        ),
+        amount,
+    )?;
     ctx.accounts.user_account.is_claimed = 1;
 
     emit!(UserClaimed {

@@ -37,11 +37,11 @@ mod token_presale {
 
     pub fn claim_token(
         ctx: Context<ClaimToken>,
-        nonce_vault: u8,
-        token_vault_bump: u8,
-        presale_account_bump: u8,
+        // nonce_vault: u8,
+        // token_vault_bump: u8,
+        // presale_account_bump: u8,
     ) -> Result<()> {
-        claim_token::handler(ctx, nonce_vault, token_vault_bump, presale_account_bump)
+        claim_token::handler(ctx)
     }
 
     pub fn cancel_presale(ctx: Context<CancelPresale>) -> Result<()> {
