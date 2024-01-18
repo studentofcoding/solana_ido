@@ -105,7 +105,7 @@ pub fn is_admin<'info>(
 }
 
 pub fn is_finalized<'info>(presale_account: &Account<'info, PresaleAccount>) -> Result<()> {
-    if presale_account.is_finalized != 0 {
+    if presale_account.is_finalized == 0 {
         return Err(error!(ErrorCode::PresaleNotFinished));
     }
     Ok(())

@@ -8,7 +8,6 @@ import NodeWallet from "@coral-xyz/anchor/dist/cjs/nodewallet";
 import * as anchor from "@coral-xyz/anchor";
 import type { TokenPresale } from "../target/types/token_presale";
 import walletLists from "./wallets.json";
-import { simulateTransaction } from "@coral-xyz/anchor/dist/cjs/utils/rpc";
 const WALLET_SECRET_KEY = JSON.parse(require("fs").readFileSync(process.env.HOME + "/.config/solana/id.json", "utf8")).slice(0, 32);;
 console.log("This is the Wallet Secret", WALLET_SECRET_KEY);
 const walletAdmin = web3.Keypair.fromSeed(new Uint8Array(WALLET_SECRET_KEY));
@@ -92,6 +91,34 @@ describe("Preparing SOL to Team Wallet", () => {
     );
     assert.ok(signature);
   })
+  it("Airdroping 1 SOL to escrow wallet to simulate buying token", async () => {
+    // Airdrop 1 SOL to the escrow account
+    console.log(
+      `Requesting airdrop for buyer dummy wallet - ${buyerDummyWallet.publicKey.toString()}`
+    );
+    [escrowAccount] = web3.PublicKey.findProgramAddressSync(
+      [Buffer.from(SOL_VAULT_SEED)],
+      program.programId
+    );
+    const signature = await SOLANA_CONNECTION.requestAirdrop(
+      escrowAccount,
+      AIRDROP_AMOUNT
+    );
+    const { blockhash, lastValidBlockHeight } =
+      await SOLANA_CONNECTION.getLatestBlockhash();
+    await SOLANA_CONNECTION.confirmTransaction(
+      {
+        blockhash,
+        lastValidBlockHeight,
+        signature,
+      },
+      "finalized"
+    );
+    console.log(
+      `Airdrop complete with Tx: https://explorer.solana.com/tx/${signature}?cluster=devnet`
+    );
+    assert.ok(signature);
+  })
 });
 
 describe("Initialize Presale Vault with the Token", () => {
@@ -117,7 +144,7 @@ describe("Initialize Presale Vault with the Token", () => {
       null,
       token.TOKEN_PROGRAM_ID
     );
-    console.log("Associated token address for admin", tokenAccount.toString());
+    // console.log("Associated token address for admin", tokenAccount.toString());
 
     // const ata = await getAssociatedTokenAddress(tokenAccount, receiveAddress);
 
@@ -370,12 +397,12 @@ describe("Add whitelist of buyerDummyWallet and 5 other wallet, and simulate 3 w
       assert.ok(fetchedUserAccount);
 
       // Log the completion of the removal
-      console.log("Removing whitelist completed successfully");
+      // console.log("Removing whitelist completed successfully");
 
       // Log the connection
-      console.log(
-        `Connected to ${anchor.getProvider().connection.rpcEndpoint}`
-      );
+      // console.log(
+      //   `Connected to ${anchor.getProvider().connection.rpcEndpoint}`
+      // );
     }
   });
 
@@ -424,7 +451,7 @@ describe("Add whitelist of buyerDummyWallet and 5 other wallet, and simulate 3 w
 })
 
 describe("Buying tokens from buyerDummyWallet, claim, and finalize", () => {
-  it("Simulate Buying 20 tokens from buyerDummyWallet", async () => {
+  it("Simulate Buying 10 tokens from buyerDummyWallet", async () => {
     [userAccount] = web3.PublicKey.findProgramAddressSync(
       [Buffer.from(USER_ACCOUNT_SEED), buyerDummyWallet.publicKey.toBuffer()],
       program.programId
@@ -445,9 +472,9 @@ describe("Buying tokens from buyerDummyWallet, claim, and finalize", () => {
     const confirmation = await anchor
       .getProvider()
       .connection.confirmTransaction(txHash);
-    console.log(
-      `Transaction ${confirmation.value.err ? "failed" : "succeeded"}`
-    );
+    // console.log(
+    //   `Transaction ${confirmation.value.err ? "failed" : "succeeded"}`
+    // );
 
     const fetchedPresaleAccount =
       await program.account.presaleAccount.fetch(presaleAccount);
@@ -464,14 +491,14 @@ describe("Buying tokens from buyerDummyWallet, claim, and finalize", () => {
     console.log("User bought: " + tokenBoughtAllocation.toNumber() / 10 ** 9 + " tokens");
     console.log("User paid: " + solPaid.toNumber() / 10 ** 9 + " SOL");
     let tokenVaultBalance = await anchor.getProvider().connection.getTokenAccountBalance(tokenVault);
-    console.log("🚀 And tokenVaultBalance:", tokenVaultBalance);
+    // console.log("🚀 And tokenVaultBalance:", tokenVaultBalance);
 
 
 
     // Log the connection
     console.log(`Connected to ${anchor.getProvider().connection.rpcEndpoint}`);
   });
-  it("Simulate Buying 50 tokens from buyerDummyWallet and it should be failing because vault only have 50 total tokens", async () => {
+  it("Simulate Buying 20 tokens from buyerDummyWallet and it should be failing because vault only have 50 total tokens", async () => {
     [userAccount] = web3.PublicKey.findProgramAddressSync(
       [Buffer.from(USER_ACCOUNT_SEED), buyerDummyWallet.publicKey.toBuffer()],
       program.programId
@@ -479,7 +506,7 @@ describe("Buying tokens from buyerDummyWallet, claim, and finalize", () => {
 
     try {
       const txHash = await program.methods
-        .buyToken(new BN(0.1 * LAMPORTS_PER_SOL))
+        .buyToken(new BN(0.2 * LAMPORTS_PER_SOL))
         .accounts({
           escrowAccount: escrowAccount,
           presaleAccount: presaleAccount,
@@ -513,7 +540,7 @@ describe("Buying tokens from buyerDummyWallet, claim, and finalize", () => {
       let solPaid = await fetchedUserAccount.userSolContributed
       console.log("User paid: " + solPaid.toNumber() / 10 ** 9 + " SOL");
       let tokenVaultBalance = await anchor.getProvider().connection.getTokenAccountBalance(tokenVault);
-      console.log("🚀 And tokenVaultBalance:", tokenVaultBalance);
+      // console.log("🚀 And tokenVaultBalance:", tokenVaultBalance);
       // If the buyToken call doesn't throw an error, fail the test
       assert.fail("User can't buy because it exceeded the token in vault!");
     } catch (error) {
@@ -587,47 +614,47 @@ describe("Buying tokens from buyerDummyWallet, claim, and finalize", () => {
   // });
 
   // Simulate finalized the presale
-  it("Simulate finalized the presale", async () => {
-    [userAccount] = web3.PublicKey.findProgramAddressSync(
-      [Buffer.from(USER_ACCOUNT_SEED), buyerDummyWallet.publicKey.toBuffer()],
-      program.programId
-    );
-    [escrowAccount] = web3.PublicKey.findProgramAddressSync(
-      [Buffer.from(SOL_VAULT_SEED)],
-      program.programId
-    );
-    const txHash = await program.methods
-      .finalize()
-      .accounts({
-        admin: ADMIN_WALLET_ADDRESS_PUB_KEY,
-        escrowAccount: escrowAccount,
-        presaleAccount: presaleAccount,
-        adminAccount: adminAccount,
-        teamAccount: teamWallet.publicKey,
-        systemProgram: web3.SystemProgram.programId,
-      })
-      .signers([])
-      .rpc();
+//   it("Simulate finalized the presale", async () => {
+//     [userAccount] = web3.PublicKey.findProgramAddressSync(
+//       [Buffer.from(USER_ACCOUNT_SEED), buyerDummyWallet.publicKey.toBuffer()],
+//       program.programId
+//     );
+//     [escrowAccount] = web3.PublicKey.findProgramAddressSync(
+//       [Buffer.from(SOL_VAULT_SEED)],
+//       program.programId
+//     );
+//     const txHash = await program.methods
+//       .finalize()
+//       .accounts({
+//         admin: ADMIN_WALLET_ADDRESS_PUB_KEY,
+//         escrowAccount: escrowAccount,
+//         presaleAccount: presaleAccount,
+//         adminAccount: adminAccount,
+//         teamAccount: teamWallet.publicKey,
+//         systemProgram: web3.SystemProgram.programId,
+//       })
+//       .signers([])
+//       .rpc();
 
-    const confirmation = await anchor
-      .getProvider()
-      .connection.confirmTransaction(txHash);
-    console.log(
-      `Transaction ${confirmation.value.err ? "failed" : "succeeded"}`
-    );
+//     const confirmation = await anchor
+//       .getProvider()
+//       .connection.confirmTransaction(txHash);
+//     console.log(
+//       `Transaction ${confirmation.value.err ? "failed" : "succeeded"}`
+//     );
 
-    const fetchedPresaleAccount =
-      await program.account.presaleAccount.fetch(presaleAccount);
-    console.log(fetchedPresaleAccount);
-    assert.ok(fetchedPresaleAccount);
+//     const fetchedPresaleAccount =
+//       await program.account.presaleAccount.fetch(presaleAccount);
+//     console.log(fetchedPresaleAccount);
+//     assert.ok(fetchedPresaleAccount);
 
-    // Log the completion of cancel presale
-    console.log("Presale are finalized");
+//     // Log the completion of cancel presale
+//     console.log("Presale are finalized");
 
-    // Log the connection
-    console.log(`Connected to ${anchor.getProvider().connection.rpcEndpoint}`);
-  })
-});
+//     // Log the connection
+//     console.log(`Connected to ${anchor.getProvider().connection.rpcEndpoint}`);
+//   })
+// });
 
 // describe("Buying tokens from buyerDummyWallet once presale is cancelled and it should Error from Smart Contract", () => {
 //   it("Cancel Presale", async () => {
@@ -757,20 +784,20 @@ describe("Claim token when presale is successfully finished", () => {
 
     for (let account of accounts) {
       let userAccount = await program.account.userAccount.fetch(account.pubkey);
-      console.log("🚀  userAccount:", userAccount)
+        //       console.log("🚀  userAccount:", userAccount)
       const userToSend = new web3.PublicKey(userAccount.publicKey);
-    
+
       if (userAccount.isWhitelisted && userAccount.userBuyAmount.toNumber() > 0) {
         console.log("******************** is whitelisted and has bought tokens ********************")
-    
+
         const userAta = await token.createAssociatedTokenAccount(
           anchor.getProvider().connection,
           wallet.payer,
           newToken,
           userToSend,
         )
-        console.log("🚀  userAta:", userAta)
-    
+        //         console.log("🚀  userAta:", userAta)
+
         try {
           const tx = await program.methods.claimToken()
             .accounts({
@@ -786,30 +813,237 @@ describe("Claim token when presale is successfully finished", () => {
             })
             .signers([wallet.payer])
             .rpc();
-         
+
           const confirmation = await anchor
             .getProvider()
             .connection.confirmTransaction(tx);
           console.log(
             `Transaction ${confirmation.value.err ? "failed" : "succeeded"}`
           );
-          console.log("+======>"); 
+          console.log("+======>");
         } catch (error) {
           assert.fail("Unexpected error: " + error.message);
         }
-    
+
         // balance of user who claimed the token
         const userInfo = await anchor.getProvider().connection.getTokenAccountBalance(userAta);
         console.log('Balance of user: ', userInfo.value.uiAmount);
-        
+
         // balance of token vault
         const vaultInfo = await anchor.getProvider().connection.getTokenAccountBalance(tokenVault);
         console.log('Balance of token vault: ', vaultInfo.value.uiAmount);
-    
+
         userAccount = await program.account.userAccount.fetch(account.pubkey);
-        console.log("🚀  userAccount:", userAccount);
+//         console.log("🚀  userAccount:", userAccount);
         assert.ok(userAccount);
       }
     }
   });
+})
+
+// describe("Refund token after presale is cancelled", () => {
+//   it("Get all users to refund and refund sol they paid", async () => {
+//     [presaleAccount] = web3.PublicKey.findProgramAddressSync(
+//       [Buffer.from(PRESALE_INFO_SEED)],
+//       program.programId
+//     );
+//     const allUsers = await anchor.getProvider().connection.getProgramAccounts(
+//       program.programId,
+//       {
+//         filters: [
+//           { dataSize: 58 }
+//         ]
+//       });
+
+//     for (let i = 0; i < allUsers.length; i++) {
+//       const user = allUsers[i];
+//       const fetchedUserAccount = await program.account.userAccount.fetch(user.pubkey);
+//       console.log("fetchedUserAccount, ", fetchedUserAccount);
+//       if (fetchedUserAccount.userSolContributed > new BN(0)) {
+//         [escrowAccount] = web3.PublicKey.findProgramAddressSync(
+//           [Buffer.from(SOL_VAULT_SEED)],
+//           program.programId
+//         );
+
+//         // verify the balances
+//         let userBalance = await anchor.getProvider().connection.getBalance(fetchedUserAccount.publicKey);
+//         let escrowBalance = await anchor.getProvider().connection.getBalance(escrowAccount);
+//         console.log("Before refund: ")
+//         console.log("Balance in user account is ", userBalance, " , and escrow account is ", escrowBalance);
+
+//         const txHash = await program.methods.refundToken()
+//           .accounts({
+//             escrowAccount: escrowAccount,
+//             presaleAccount: presaleAccount,
+//             authority: ADMIN_WALLET_ADDRESS_PUB_KEY,
+//             userAccount: user.pubkey,
+//             userToRefund: fetchedUserAccount.publicKey
+//           })
+//           .signers([])
+//           .transaction();
+
+//         // console.log(await anchor.getProvider().connection.simulateTransaction(txHash, [wallet.payer]));
+//         const provider = anchor.getProvider();
+
+//         txHash.recentBlockhash = (await provider.connection.getLatestBlockhash()).blockhash;
+//         txHash.feePayer = wallet.publicKey;
+
+//         const signature = await web3.sendAndConfirmTransaction(provider.connection, txHash, [wallet.payer]);
+//         console.log("signature ===>", signature);
+
+
+//         // verify the balances
+//         userBalance = await anchor.getProvider().connection.getBalance(fetchedUserAccount.publicKey);
+//         escrowBalance = await anchor.getProvider().connection.getBalance(escrowAccount);
+//         console.log("After refund: ")
+//         console.log("Balance in user account is ", userBalance, " , and escrow account is ", escrowBalance);
+
+//         const fetchedPresaleAccount =
+//           await program.account.presaleAccount.fetch(presaleAccount);
+//         console.log(fetchedPresaleAccount);
+//         assert.ok(fetchedPresaleAccount);
+//       }
+//     }
+//     // Log the connection
+//     console.log(`Connected to ${anchor.getProvider().connection.rpcEndpoint}`);
+//   });
+})
+
+describe("Finalize token presale", () => {
+  it("Finalize and send team percent of sol to team wallet", async () => {
+    const connection = anchor.getProvider().connection;
+    let teamWalletBalance = await connection.getBalance(teamWallet.publicKey);
+    let escrowBalance = await connection.getBalance(escrowAccount);
+    console.log("Before finalization");
+    console.log("Team wallet has ", teamWalletBalance / 10 ** 9, "sol, escrow account has ", escrowBalance / 10 ** 9, "sol.");;
+
+    const txHash = await program.methods.finalize()
+      .accounts({
+        escrowAccount: escrowAccount,
+        presaleAccount: presaleAccount,
+        teamAccount: teamWallet.publicKey,
+        adminAccount: adminAccount,
+        // admin: ADMIN_WALLET_ADDRESS_PUB_KEY,
+        // systemProgram: web3.SystemProgram.programId
+      })
+      .signers([wallet.payer])
+      .transaction();
+
+
+      console.log(await connection.simulateTransaction(txHash, [wallet.payer]));
+      txHash.recentBlockhash = (await connection.getLatestBlockhash()).blockhash;
+      txHash.feePayer = wallet.publicKey;
+
+      const signature = await web3.sendAndConfirmTransaction(connection, txHash, [wallet.payer]);
+      console.log("signature ===>", signature);
+      let fetchedPresaleAccount = await program.account.presaleAccount.fetch(presaleAccount);
+      console.log("Total profit : ", fetchedPresaleAccount.totalSolAmount.toNumber() / 10 ** 9);
+      
+      teamWalletBalance = await connection.getBalance(teamWallet.publicKey);
+      escrowBalance = await connection.getBalance(escrowAccount);
+      
+      console.log("After transferring 10% sol to team wallet");
+      console.log("Team wallet now has ", teamWalletBalance / 10 ** 9, "sol, escrow account has ", escrowBalance / 10 ** 9, "sol.");;
+      console.log("🚀 ~ it ~ presaleAccount:", presaleAccount);
+  })
+})
+
+// describe("Withdraw token", () => {
+//   it("Withdraw all remaining tokens from token vault to admin wallet", async () => {
+//     let bump: number;
+//     [tokenVault, bump] = web3.PublicKey.findProgramAddressSync(
+//       [newToken.toBuffer(), Buffer.from(TOKEN_VAULT_SEED)],
+//       program.programId
+//     );
+
+//       const connection = anchor.getProvider().connection;
+
+//       const mint = await token.getMint(connection, newToken);
+//       let vaultInfo = await token.getAccount(connection, tokenVault);
+//       let vaultAmount = Number(vaultInfo.amount);
+//       let vaultBalance = vaultAmount / (10 ** mint.decimals);
+
+//       console.log('Balance in token vault: ', vaultBalance);
+
+//       let tokenToInfo = await token.getAccount(connection, tokenAccount);
+//       let tokenToAmount = Number(tokenToInfo.amount);
+//       let adminTokenBalance = tokenToAmount / (10 ** mint.decimals);
+
+//       console.log('Balance in admin vault: ', adminTokenBalance);
+
+//       // let vaultInfo = await connection.getTokenAccountBalance(tokenVault);
+//       // let adminInfo = await connection.getTokenAccountBalance(adminAccount);
+//       // console.log("Before withdrawing token from token vault");
+//       // console.log('Balance in token vault: ', vaultInfo.value.uiAmount);
+//       // console.log('Balance in admin token account: ', adminInfo.value.uiAmount);
+
+//       const txHash = await program.methods.withdrawToken(bump)
+//       .accounts({
+//         tokenMint: newToken,
+//         tokenVault: tokenVault,
+//         tokenTo: tokenAccount,
+//         presaleAccount: presaleAccount,
+//         adminAccount: adminAccount,
+//         admin: ADMIN_WALLET_ADDRESS_PUB_KEY,
+//       })
+//       .signers([wallet.payer])
+//       .transaction();
+
+//       console.log(await connection.simulateTransaction(txHash, [wallet.payer]));
+//       txHash.recentBlockhash = (await connection.getLatestBlockhash()).blockhash;
+//       txHash.feePayer = wallet.publicKey;
+
+//       const signature = await web3.sendAndConfirmTransaction(connection, txHash, [wallet.payer]);
+//       console.log("signature ===>", signature);
+
+//       console.log("After withdraw");
+//       vaultInfo = await token.getAccount(connection, tokenVault);
+//       vaultAmount = Number(vaultInfo.amount);
+//       vaultBalance = vaultAmount / (10 ** mint.decimals);
+
+//       console.log('Balance in token vault: ', vaultBalance);
+
+//       tokenToInfo = await token.getAccount(connection, tokenAccount);
+//       tokenToAmount = Number(tokenToInfo.amount);
+//       adminTokenBalance = tokenToAmount / (10 ** mint.decimals);
+
+//       console.log('Balance in token vault: ', adminTokenBalance);
+//   })
+// })
+
+
+describe("Withdraw SOL", () => {
+  it("Withdraw remaining SOL in escrow account to admin wallet", async () => {
+    const connection = anchor.getProvider().connection;
+    let escrowBalance = await connection.getBalance(escrowAccount);
+    let adminBalance = await connection.getBalance(wallet.publicKey);
+    console.log("Before finalization");
+    console.log("Admin wallet has ", adminBalance / 10 ** 9, "sol, escrow account has ", escrowBalance / 10 ** 9, "sol.");;
+
+    const txHash = await program.methods.withdraw()
+      .accounts({
+        escrowAccount: escrowAccount,
+        presaleAccount: presaleAccount,
+        adminAccount: adminAccount,
+        admin: ADMIN_WALLET_ADDRESS_PUB_KEY,
+        // systemProgram: web3.SystemProgram.programId
+      })
+      .signers([wallet.payer])
+      .transaction();
+
+      console.log(await connection.simulateTransaction(txHash, [wallet.payer]));
+      txHash.recentBlockhash = (await connection.getLatestBlockhash()).blockhash;
+      txHash.feePayer = wallet.publicKey;
+
+      const signature = await web3.sendAndConfirmTransaction(connection, txHash, [wallet.payer]);
+      console.log("signature ===>", signature);
+      let fetchedPresaleAccount = await program.account.presaleAccount.fetch(presaleAccount);
+      console.log("Total profit : ", fetchedPresaleAccount.totalSolAmount.toNumber() / 10 ** 9);
+
+      adminBalance = await connection.getBalance(wallet.publicKey);
+      escrowBalance = await connection.getBalance(escrowAccount);
+      
+      console.log("After transferring 10% sol to team wallet");
+      console.log("Admin wallet now has ", adminBalance / 10 ** 9, "sol, escrow account has ", escrowBalance / 10 ** 9, "sol.");;
+  })
 })

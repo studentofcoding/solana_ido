@@ -4,7 +4,8 @@ use {anchor_lang::prelude::*, crate::state::*};
 #[derive(Accounts)]
 pub struct WithdrawToken<'info> {
     #[account(
-        address = PRESALE_TOKEN_MINT_PUBKEY.parse::<Pubkey>().unwrap(),
+        mut
+        // address = PRESALE_TOKEN_MINT_PUBKEY.parse::<Pubkey>().unwrap(),
     )]
     pub token_mint: Box<Account<'info, Mint>>,
 
@@ -14,7 +15,7 @@ pub struct WithdrawToken<'info> {
 
     #[account(
         mut,
-        seeds = [ token_mint.key().as_ref() ],
+        seeds = [ token_mint.key().as_ref(), TOKEN_VAULT_SEED.as_bytes() ],
         bump,
     )]
     pub token_vault: Box<Account<'info, TokenAccount>>,
@@ -32,25 +33,24 @@ pub struct WithdrawToken<'info> {
     pub admin: Signer<'info>,
     pub system_program: Program<'info, System>,
     pub token_program: Program<'info, Token>,
-    pub rent: Sysvar<'info, Rent>,
 }
 
 #[access_control(is_admin(&ctx.accounts.admin_account, &ctx.accounts.admin))]
 #[access_control(is_finalized(&ctx.accounts.presale_account))]
-pub fn handler(ctx: Context<WithdrawToken>, nonce_vault: u8) -> Result<()> {
-    let token_mint_key = ctx.accounts.token_mint.key();
-    let seeds = &[token_mint_key.as_ref(), &[nonce_vault]];
-    let signer = &[&seeds[..]];
+pub fn handler(ctx: Context<WithdrawToken>, _nonce_vault: u8) -> Result<()> {
+    // let token_mint_key = ctx.accounts.token_mint.key();
+    // let seeds = &[token_mint_key.as_ref(), &[nonce_vault]];
+    // let signer = &[&seeds[..]];
     let amount = ctx.accounts.token_vault.amount;
     //transfer from vault to admin
-    let cpi_ctx = CpiContext::new_with_signer(
+    let cpi_ctx = CpiContext::new(
         ctx.accounts.token_program.to_account_info(),
         token::Transfer {
             from: ctx.accounts.token_vault.to_account_info(),
             to: ctx.accounts.token_to.to_account_info(),
             authority: ctx.accounts.token_vault.to_account_info(),
         },
-        signer,
+        // signer,
     );
     token::transfer(cpi_ctx, amount)?;
 

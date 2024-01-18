@@ -8,11 +8,11 @@ pub struct Finalize<'info> {
         seeds = [ SOL_VAULT_SEED.as_bytes() ],
         bump,
     )]
-    pub escrow_account: UncheckedAccount<'info>,
+    pub escrow_account: AccountInfo<'info>,
     /// CHECK: This is team account.
     #[account(mut)]
     //the team account to withdraw
-    pub team_account: UncheckedAccount<'info>,
+    pub team_account: AccountInfo<'info>,
     #[account(
         mut,
         seeds = [ PRESALE_INFO_SEED.as_bytes() ],
@@ -29,8 +29,16 @@ pub struct Finalize<'info> {
 
 #[access_control(is_admin(&ctx.accounts.admin_account, &ctx.accounts.admin))]
 pub fn handler(ctx: Context<Finalize>) -> Result<()> {
-    let team_amount = (ctx.accounts.presale_account.team_percent as u64
-        * ctx.accounts.presale_account.total_sol_amount
+    let presale_account = &mut ctx.accounts.presale_account;
+    // if presale_account.end_time > Clock::get().unwrap().unix_timestamp as u64 {
+    //     return Err(error!(ErrorCode::PresaleNotFinished));
+    // }
+    if presale_account.is_cancelled == 1 {
+       return Err(error!(ErrorCode::PresaleCancelled));
+    }
+
+    let team_amount = (presale_account.team_percent as u64
+        * presale_account.total_sol_amount
         / 10000) as u64;
     let amount = **ctx.accounts.escrow_account.lamports.borrow();
     if amount < team_amount {
@@ -40,11 +48,12 @@ pub fn handler(ctx: Context<Finalize>) -> Result<()> {
     **ctx.accounts.escrow_account.try_borrow_mut_lamports()? -= team_amount;
     **ctx.accounts.team_account.try_borrow_mut_lamports()? += team_amount;
 
-    ctx.accounts.presale_account.is_finalized = 1;
+    presale_account.is_finalized = 1;
 
     emit!(PresaleFinalized {
-        total_amount: ctx.accounts.presale_account.total_sol_amount,
+        total_amount: presale_account.total_sol_amount,
         time_stamp: Clock::get().unwrap().unix_timestamp as u32
     });
+
     Ok(())
 }
