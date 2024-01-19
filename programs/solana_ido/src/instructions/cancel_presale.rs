@@ -1,9 +1,11 @@
 use {anchor_lang::prelude::*, crate::state::*};
 
 #[derive(Accounts)]
+// #[instruction(instruction)]
 pub struct CancelPresale<'info> {
     #[account(
         mut,
+        // realloc = std::mem::size_of::<PresaleAccount>() - 
         seeds = [ PRESALE_INFO_SEED.as_bytes() ],
         bump,
     )]

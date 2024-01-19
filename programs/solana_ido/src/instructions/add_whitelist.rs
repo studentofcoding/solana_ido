@@ -33,6 +33,7 @@ pub fn handler(ctx: Context<AddWhitelist>) -> Result<()> {
     ctx.accounts.user_account.user_buy_amount = 0;
     ctx.accounts.user_account.user_sol_contributed = 0;
     ctx.accounts.user_account.is_claimed = 0;
+    ctx.accounts.user_account.public_key = ctx.accounts.authority.key();
 
     ctx.accounts.presale_account.total_whitelisted_wallets += 1;
 
