@@ -546,7 +546,7 @@ describe("Buying tokens from buyer1Wallet, claim, and finalize", () => {
       program.programId
     );
     const txHash = await program.methods
-      .buyToken(new BN(0.1 * LAMPORTS_PER_SOL))
+      .buyToken(new BN(0.5 * LAMPORTS_PER_SOL))
       .accounts({
         escrowAccount: escrowAccount,
         presaleAccount: presaleAccount,
