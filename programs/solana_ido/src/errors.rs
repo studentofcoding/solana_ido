@@ -32,4 +32,6 @@ pub enum ErrorCode {
     MaxBuyAmountExceeded,
     #[msg("Token balance in token vault is not enough.")]
     NotEnoughTokenInVault,
+    #[msg("Presale did not reach the softcap.")]
+    SoftCapNotReached,
 }

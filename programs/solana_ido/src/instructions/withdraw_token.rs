@@ -1,5 +1,5 @@
 use anchor_spl::token::{self, Mint, Token, TokenAccount};
-use {anchor_lang::prelude::*, crate::state::*};
+use {anchor_lang::prelude::*, crate::errors::ErrorCode, crate::state::*};
 
 #[derive(Accounts)]
 pub struct WithdrawToken<'info> {
@@ -38,9 +38,10 @@ pub struct WithdrawToken<'info> {
 #[access_control(is_admin(&ctx.accounts.admin_account, &ctx.accounts.admin))]
 #[access_control(is_finalized(&ctx.accounts.presale_account))]
 pub fn handler(ctx: Context<WithdrawToken>, _nonce_vault: u8) -> Result<()> {
-    // let token_mint_key = ctx.accounts.token_mint.key();
-    // let seeds = &[token_mint_key.as_ref(), &[nonce_vault]];
-    // let signer = &[&seeds[..]];
+ 
+    if ctx.accounts.presale_account.is_cancelled == 1 {
+        return Err(error!(ErrorCode::PresaleCancelled ))
+    }
     let amount = ctx.accounts.token_vault.amount;
     //transfer from vault to admin
     let cpi_ctx = CpiContext::new(
