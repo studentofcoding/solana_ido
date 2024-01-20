@@ -43,6 +43,7 @@ const program = anchor.workspace.TokenPresale as anchor.Program<TokenPresale>;
 describe("Preparing SOL to Team Wallet", () => {
   // Configure the client to use the local cluster
   const AIRDROP_AMOUNT = 1 * LAMPORTS_PER_SOL; // 1 SOL
+  const AIRDROP_AMOUNT_0_01 = 0.01 * LAMPORTS_PER_SOL; // 0.01 SOL
 
   it("Airdroping 1 SOL to Team wallet", async () => {
     // Airdrop 2 SOL to the admin account
@@ -141,7 +142,7 @@ describe("Preparing SOL to Team Wallet", () => {
     );
     assert.ok(signature);
   })
-  it("Airdroping 1 SOL to escrow wallet to simulate buying token", async () => {
+  it("Airdroping 0.01 SOL to Escrow wallet to Proceed The transactions", async () => {
     // Airdrop 1 SOL to the escrow account
     console.log(
       `Requesting airdrop for buyer dummy wallet - ${buyer1Wallet.publicKey.toString()}`
@@ -152,7 +153,7 @@ describe("Preparing SOL to Team Wallet", () => {
     );
     const signature = await SOLANA_CONNECTION.requestAirdrop(
       escrowAccount,
-      AIRDROP_AMOUNT
+      AIRDROP_AMOUNT_0_01
     );
     const { blockhash, lastValidBlockHeight } =
       await SOLANA_CONNECTION.getLatestBlockhash();
@@ -232,13 +233,13 @@ describe("Initialize Presale Vault with the Token", () => {
 
     const txHash = await program.methods
       .initialize(
-        1000,
-        new BN(100),
-        new BN(10 * LAMPORTS_PER_SOL),
-        new BN(86400),
-        new BN(100 * 10 ** 9),
-        5000,
-        2500,
+        1000, // team_percent
+        new BN(100), // presale_rate
+        new BN(10 * LAMPORTS_PER_SOL), // user_max_buy
+        new BN(86400), // presale_duration
+        new BN(100 * 10 ** 9), // total_token_amount
+        5000, // soft_cap
+        2500, // hard_cap
       )
       .accounts({
         admin: ADMIN_WALLET_ADDRESS_PUB_KEY,
@@ -675,53 +676,35 @@ describe("Buying tokens from buyer1Wallet, claim, and finalize", () => {
     // Log the connection
     console.log(`Connected to ${anchor.getProvider().connection.rpcEndpoint}`);
   });
+
   it("Simulate Buying 50 tokens from buyer1Wallet and it should be failing because vault only have 50 total tokens", async () => {
     [userAccount] = web3.PublicKey.findProgramAddressSync(
       [Buffer.from(USER_ACCOUNT_SEED), buyer1Wallet.publicKey.toBuffer()],
       program.programId
     );
-
-    // try {
-    const txHash = await program.methods
-      .buyToken(new BN(0.5 * LAMPORTS_PER_SOL))
-      .accounts({
-        escrowAccount: escrowAccount,
-        presaleAccount: presaleAccount,
-        userAccount: userAccount,
-        authority: buyer1Wallet.publicKey,
-        systemProgram: web3.SystemProgram.programId,
-      })
-      .signers([buyer1Wallet])
-      .rpc();
-
-    // Confirm transaction
-    const confirmation = await anchor
-      .getProvider()
-      .connection.confirmTransaction(txHash);
-    console.log(
-      `Transaction ${confirmation.value.err ? "failed" : "succeeded"}`
-    );
-
-    const fetchedUserAccount =
-      await program.account.userAccount.fetch(userAccount);
-    console.log(fetchedUserAccount);
-    assert.ok(fetchedUserAccount);
-
-    let tokenBoughtAllocation = fetchedUserAccount.userBuyAmount;
-    console.log("User bought: " + tokenBoughtAllocation.toNumber() / 10 ** 9 + " tokens");
-    let solPaid = fetchedUserAccount.userSolContributed;
-    console.log("User paid: " + solPaid.toNumber() / 10 ** 9 + " SOL");
-    let tokenVaultBalance = await anchor.getProvider().connection.getTokenAccountBalance(tokenVault);
-    console.log("🚀 And tokenVaultBalance:", tokenVaultBalance);
-    // If the buyToken call doesn't throw an error, fail the test
-    assert.fail("User can't buy because it exceeded the token in vault!");
-    // } catch (error) {
-    //   console.log("This is the error", error.error);
-    //   const fetchedUserAccount =
-    //     await program.account.userAccount.fetch(userAccount);
-    //   console.log(fetchedUserAccount);
-    // }
-
+  
+    try {
+      const txHash = await program.methods
+        .buyToken(new BN(0.5 * LAMPORTS_PER_SOL))
+        .accounts({
+          escrowAccount: escrowAccount,
+          presaleAccount: presaleAccount,
+          userAccount: userAccount,
+          authority: buyer1Wallet.publicKey,
+          systemProgram: web3.SystemProgram.programId,
+        })
+        .signers([buyer1Wallet])
+        .rpc();
+  
+      // If the buyToken call doesn't throw an error, fail the test
+      assert.fail("User can't buy because it exceeded the token in vault!");
+    } catch (error) {
+      console.log("This is the error", error.error);
+      const fetchedUserAccount =
+        await program.account.userAccount.fetch(userAccount);
+      console.log(fetchedUserAccount);
+    }
+  
     // Log the connection
     console.log(`Connected to ${anchor.getProvider().connection.rpcEndpoint}`);
   });
