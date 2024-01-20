@@ -50,14 +50,7 @@ pub fn handler(ctx: Context<BuyToken>, amount: u64) -> Result<()> {
     // check if presale reached the hard cap
     if ctx.accounts.presale_account.total_token_amount < tokens_to_allocate {
         ctx.accounts.presale_account.is_hardcapped = 1;
-        // ctx.accounts.presale_account.is_cancelled = 1;
-
-        emit!(PresaleCancelled {
-            total_amount: ctx.accounts.presale_account.total_sol_amount,
-            time_stamp: Clock::get().unwrap().unix_timestamp as u32
-        });
-
-        return Err(error!(ErrorCode::NotEnoughTokenInVault));
+        msg!("The token balance in token vault is not enough");
     } else {
         // transfer bet amount to escrow account
         invoke(

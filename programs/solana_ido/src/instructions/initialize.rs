@@ -60,7 +60,6 @@ pub fn handler(
     presale_rate: u64,
     user_max_buy: u64,
     presale_duration: u64,
-    price: u64,
     total_token_amount: u64,
     token_allocation: u32,
     softcap_precent: u32
@@ -79,8 +78,7 @@ pub fn handler(
     presale_account.is_cancelled = 0;
     presale_account.soft_cap = total_token_amount * softcap_precent as u64 / 10000;  // 25%
     presale_account.token_allocation = token_allocation;
-    presale_account.total_token_amount = total_token_amount;
-    presale_account.price = price;
+    presale_account.total_token_amount = 0;
     presale_account.is_softcapped = 0;
     presale_account.is_hardcapped = 0;
     Ok(())

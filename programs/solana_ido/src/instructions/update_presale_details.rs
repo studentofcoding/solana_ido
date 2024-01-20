@@ -19,7 +19,6 @@ pub struct UpdatePresaleDetails<'info> {
 #[access_control(is_admin(&ctx.accounts.admin_account, &ctx.accounts.admin))]
 pub fn handler(
     ctx: Context<UpdatePresaleDetails>,
-    price: u64,
     start_time: u64,
     end_time: u64,
 ) -> Result<()> {
@@ -27,7 +26,6 @@ pub fn handler(
     if cur_time > end_time || start_time >= end_time {
         return Err(error!(ErrorCode::WrongTimePeriod));
     }
-    ctx.accounts.presale_account.price = price;
     ctx.accounts.presale_account.start_time = start_time;
     ctx.accounts.presale_account.end_time = end_time;
     Ok(())

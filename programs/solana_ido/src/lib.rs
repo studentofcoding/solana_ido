@@ -19,12 +19,11 @@ mod token_presale {
         presale_rate: u64,
         user_max_buy: u64,
         presale_duration: u64,
-        price: u64,
         total_token_amount: u64,
         token_allocation: u32,
         softcap_precent: u32
     ) -> Result<()> {
-        initialize::handler(ctx, team_percent, presale_rate, user_max_buy, presale_duration, price,total_token_amount, token_allocation, softcap_precent)
+        initialize::handler(ctx, team_percent, presale_rate, user_max_buy, presale_duration, total_token_amount, token_allocation, softcap_precent)
     }
 
     pub fn buy_token(ctx: Context<BuyToken>, amount: u64) -> Result<()> {
@@ -51,12 +50,11 @@ mod token_presale {
     // Handle update presale details
     pub fn update_presale_details(
         ctx: Context<UpdatePresaleDetails>,
-        price: u64,
         start_time: u64,
         end_time: u64,
         // token_allocation: u64,
     ) -> Result<()> {
-        update_presale_details::handler(ctx, price, start_time, end_time)
+        update_presale_details::handler(ctx, start_time, end_time)
     }
 
     // pub fn set_whitelist(ctx: Context<SetWhitelist>, has_whitelist: u8) -> Result<()> {
@@ -71,8 +69,8 @@ mod token_presale {
         remove_whitelist::handler(ctx)
     }
 
-    pub fn finalize(ctx: Context<Finalize>) -> Result<()> {
-        finalize::handler(ctx)
+    pub fn finalize(ctx: Context<Finalize>, forcible_finalize: u8) -> Result<()> {
+        finalize::handler(ctx, forcible_finalize)
     }
 
     pub fn deposit_token(ctx: Context<DepositToken>, mint: Pubkey, amount: u64) -> Result<()> {

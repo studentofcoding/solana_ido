@@ -14,7 +14,7 @@ pub const PRESALE_TOKEN_MINT_PUBKEY: &str = "85hr9mrrv2SHuWsEB58y7HhyKM76C88gVo8
 pub const ADMIN_ACCOUNT_SIZE: usize = 8 + 32;           // 40 bytes
 pub const USER_ACCOUNT_SIZE: usize = 8 + 1 + 8 + 8 + 1 + 32; // 58 bytes
 pub const PRESALE_ACCOUNT_SIZE: usize 
-    = 8 + 4 + 8 + 4 + 8 + 8 + 8 + 8 + 8 + 4 + 8 + 8 + 1 + 1 + 8 + 4 + 1 + 1;    // 100 bytes
+    = 8 + 4 + 8 + 4 + 8 + 8 + 8 + 8 + 4 + 8 + 8 + 1 + 1 + 8 + 4 + 1 + 1;    // 92 bytes
 
 #[account]
 pub struct AdminAccount {
@@ -40,7 +40,6 @@ pub struct PresaleAccount {
     pub start_time: u64,                // 8 byte
     pub end_time: u64,                  // 8 byte
     pub presale_duration: u64,          // 8 byte
-    pub price: u64,                     // 8 byte
     pub total_participants: u32,        // 4 byte
     pub total_sol_amount: u64,          // 8 byte
     pub total_token_amount: u64,        // 8 byte

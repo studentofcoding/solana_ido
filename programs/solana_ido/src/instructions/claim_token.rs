@@ -40,7 +40,7 @@ pub struct ClaimToken<'info> {
     pub rent: Sysvar<'info, Rent>,
 }
 
-// #[access_control(is_finalized(&ctx.accounts.presale_account))]
+#[access_control(is_finalized(&ctx.accounts.presale_account))]
 pub fn handler(
     ctx: Context<ClaimToken>, // , nonce_vault: u8, token_vault_bump: u8, presale_account_bump: u8
 ) -> Result<()> {

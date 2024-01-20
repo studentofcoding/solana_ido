@@ -1,4 +1,5 @@
 use {anchor_lang::prelude::*, crate::state::*};
+use {crate::account, crate::errors::ErrorCode };
 
 #[derive(Accounts)]
 pub struct Withdraw<'info> {
@@ -26,9 +27,12 @@ pub struct Withdraw<'info> {
 #[access_control(is_admin(&ctx.accounts.admin_account, &ctx.accounts.admin))]
 #[access_control(is_finalized(&ctx.accounts.presale_account))]
 pub fn handler(ctx: Context<Withdraw>) -> Result<()> {
+    if ctx.accounts.presale_account.is_cancelled == 1 {
+        return Err(error!(ErrorCode::PresaleCancelled));
+    }
     let amount = **ctx.accounts.escrow_account.lamports.borrow();
     **ctx.accounts.escrow_account.try_borrow_mut_lamports()? -= amount;
     **ctx.accounts.admin.try_borrow_mut_lamports()? += amount;
-    ctx.accounts.presale_account.total_sol_amount = 0;
+    // ctx.accounts.presale_account.total_sol_amount = 0;
     Ok(())
 }
