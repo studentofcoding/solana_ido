@@ -1,14 +1,21 @@
 {
   "scripts": {
     "lint:fix": "prettier */*.js \"*/**/*{.js,.ts}\" -w",
-    "lint": "prettier */*.js \"*/**/*{.js,.ts}\" --check"
+    "lint": "prettier */*.js \"*/**/*{.js,.ts}\" --check",
+    "ts-node": "set ANCHOR_WALLET=./id.json && ts-node ./cli/command.ts",
+    "ts-check": "ts-node ./tests/anchor.ts"
   },
   "dependencies": {
     "@coral-xyz/anchor": "0.29.0",
+    "@project-serum/anchor": "^0.26.0",
     "@solana/spl-token": "^0.3.9",
     "@solana/web3.js": "1.78.4",
     "assert": "*",
-    "bn.js": "*"
+    "base58": "^2.0.1",
+    "bn.js": "*",
+    "commander": "^11.1.0",
+    "dotenv": "^16.3.2",
+    "loglevel": "^1.8.1"
   },
   "devDependencies": {
     "@types/bn.js": "^5.1.1",

@@ -2,21 +2,19 @@
 seeds = false
 skip-lint = false
 
-[programs.localnet]
-token_presale = "3SR3iCToALQU9yDZ68WnQnB4nJEX4WjykKERSfUKn9Pc"
-
-
 [programs.devnet]
-token_presale = "3SR3iCToALQU9yDZ68WnQnB4nJEX4WjykKERSfUKn9Pc"
+token_presale = "ALA9gjt3z7fenz9nipbdofgUPQoLUHq9eKr4D9x6yQ7B"
 
+[programs.localnet]
+token_presale = "ALA9gjt3z7fenz9nipbdofgUPQoLUHq9eKr4D9x6yQ7B"
 
 [registry]
 url = "https://api.apr.dev"
 
 [provider]
 cluster = "localnet"
-wallet = "./id.json"
+wallet = "./demo.json"
 
 [scripts]
-test = "yarn run ts-mocha -p ./tsconfig.json -t 1000000 tests/**/*.ts"
+test = "yarn run ts-mocha -p ./tsconfig.json -t 100000 tests/**/*.ts"
 client = "yarn run ts-node client/*.ts"

@@ -8,7 +8,7 @@ use {anchor_lang::prelude::*, instructions::*};
 
 // This is your program's public key and it will update
 // automatically when you build the project.
-declare_id!("3SR3iCToALQU9yDZ68WnQnB4nJEX4WjykKERSfUKn9Pc");
+declare_id!("ALA9gjt3z7fenz9nipbdofgUPQoLUHq9eKr4D9x6yQ7B");
 
 #[program]
 mod token_presale {

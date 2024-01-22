@@ -48,12 +48,12 @@ pub fn handler(ctx: Context<DepositToken>, _mint:Pubkey, amount: u64) -> Result<
         },
     );
     token::transfer(cpi_ctx, amount)?;
-    ctx.accounts.presale_account.total_token_amount += amount;
+    // ctx.accounts.presale_account.total_token_amount += amount;
 
-    if ctx.accounts.presale_account.total_sol_amount != 0 {
-        ctx.accounts.presale_account.presale_rate =
-            (ctx.accounts.presale_account.total_token_amount + amount)
-                / ctx.accounts.presale_account.total_sol_amount;
-    }
+    // if ctx.accounts.presale_account.total_sol_amount != 0 {
+    //     ctx.accounts.presale_account.presale_rate =
+    //         (ctx.accounts.presale_account.total_token_amount + amount)
+    //             / ctx.accounts.presale_account.total_sol_amount;
+    // }
     Ok(())
 }
