@@ -30,64 +30,76 @@ pub struct BuyToken<'info> {
 //amount in SOL
 #[access_control(is_presale_live(&ctx.accounts.presale_account))]
 pub fn handler(ctx: Context<BuyToken>, amount: u64) -> Result<()> {
-    if ctx.accounts.presale_account.is_cancelled == 1 {
+    let presale_account = &mut ctx.accounts.presale_account;
+    if presale_account.is_cancelled == 1 {
         return Err(error!(ErrorCode::PresaleCancelled));
     }
     if ctx.accounts.user_account.is_whitelisted == false {
         return Err(error!(ErrorCode::NotInWhiteList));
     }
-    if ctx.accounts.presale_account.user_max_buy < amount {
+    if presale_account.user_max_buy < amount {
         return Err(error!(ErrorCode::MaxBuyAmountExceeded));
     }
     if **ctx.accounts.authority.lamports.borrow() < amount {
         return Err(error!(ErrorCode::NoEnoughSol));
     }
-    let fixed_presale_rate: u64 = 100;
+
     // Calculate the number of tokens to allocate to the user.
     // Both 'fixed_presale_rate' and 'amount' are now integers, so this operation is straightforward.
-    let tokens_to_allocate = fixed_presale_rate * amount;
+    let mut tokens_to_allocate = presale_account.presale_rate * amount;
+    let mut sol_to_transfer = amount;
 
     // check if presale reached the hard cap
-    if ctx.accounts.presale_account.total_token_amount < tokens_to_allocate {
-        ctx.accounts.presale_account.is_hardcapped = 1;
-        msg!("The token balance in token vault is not enough");
-    } else {
-        // transfer bet amount to escrow account
-        invoke(
-            &system_instruction::transfer(
-                ctx.accounts.authority.key,
-                ctx.accounts.escrow_account.key,
-                amount,
-            ),
-            &[
-                ctx.accounts.authority.to_account_info().clone(),
-                ctx.accounts.escrow_account.to_account_info().clone(),
-                ctx.accounts.system_program.to_account_info().clone(),
-            ],
-        )?;
+    if presale_account.total_token_remained <= tokens_to_allocate {
+        presale_account.is_hardcapped = 1;
+        tokens_to_allocate = presale_account.total_token_remained;
+        sol_to_transfer = presale_account.total_token_remained / presale_account.presale_rate;
 
-        if ctx.accounts.user_account.user_buy_amount == 0 {
-            ctx.accounts.presale_account.total_participants += 1;
-        }
-
-        // Update total SOL amount received in the presale account.
-        ctx.accounts.presale_account.total_sol_amount += amount;
-
-        // Update the user account with the amount of SOL they contributed.
-        ctx.accounts.user_account.user_sol_contributed += amount;
-
-        // Update the user account with the number of tokens they will receive.
-        ctx.accounts.user_account.user_buy_amount += tokens_to_allocate;
-        ctx.accounts.presale_account.total_token_amount -= tokens_to_allocate;
-        if ctx.accounts.presale_account.total_token_amount < ctx.accounts.presale_account.soft_cap {
-            ctx.accounts.presale_account.is_softcapped = 1;
-        }
-
-        emit!(UserBought {
-            user: *ctx.accounts.authority.key,
-            amount: amount,
-            time_stamp: Clock::get().unwrap().unix_timestamp as u32
-        });
+        msg!("The token balance in token vault is not enough, user buy all remaining tokens");
     }
+
+    // transfer bet amount to escrow account
+    invoke(
+        &system_instruction::transfer(
+            ctx.accounts.authority.key,
+            ctx.accounts.escrow_account.key,
+            sol_to_transfer,
+        ),
+        &[
+            ctx.accounts.authority.to_account_info().clone(),
+            ctx.accounts.escrow_account.to_account_info().clone(),
+            ctx.accounts.system_program.to_account_info().clone(),
+        ],
+    )?;
+
+    if ctx.accounts.user_account.user_buy_amount == 0 {
+        presale_account.total_participants += 1;
+    }
+
+    // Update total SOL amount received in the presale account.
+    presale_account.total_sol_amount += sol_to_transfer;
+
+    // Update the user account with the amount of SOL they contributed.
+    ctx.accounts.user_account.user_sol_contributed += sol_to_transfer;
+
+    // Update the user account with the number of tokens they will receive.
+    ctx.accounts.user_account.user_buy_amount += tokens_to_allocate;
+    presale_account.total_token_remained -= tokens_to_allocate;
+    if presale_account.total_token_remained < presale_account.soft_cap {
+        if presale_account.is_softcapped == 0 {
+            presale_account.is_softcapped = 1;
+        }
+    } else {
+        presale_account.presale_rate = presale_account.presale_rate;
+            // * (presale_account.total_presale_token
+            //     / (presale_account.total_presale_token * 2 - presale_account.total_token_remained));
+    }
+
+    emit!(UserBought {
+        user: *ctx.accounts.authority.key,
+        amount: sol_to_transfer,
+        time_stamp: Clock::get().unwrap().unix_timestamp as u32
+    });
+
     Ok(())
 }

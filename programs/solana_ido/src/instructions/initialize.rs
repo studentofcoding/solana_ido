@@ -78,7 +78,8 @@ pub fn handler(
     presale_account.is_cancelled = 0;
     presale_account.soft_cap = total_token_amount * softcap_precent as u64 / 10000;  // 25%
     presale_account.token_allocation = token_allocation;
-    presale_account.total_token_amount = 0;
+    presale_account.total_token_remained = total_token_amount * token_allocation as u64 / 10000;  // 50%
+    presale_account.total_presale_token = presale_account.total_token_remained;
     presale_account.is_softcapped = 0;
     presale_account.is_hardcapped = 0;
     Ok(())

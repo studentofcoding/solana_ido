@@ -55,6 +55,6 @@ pub fn handler(ctx: Context<WithdrawToken>, _nonce_vault: u8) -> Result<()> {
     );
     token::transfer(cpi_ctx, amount)?;
 
-    ctx.accounts.presale_account.total_token_amount = 0;
+    ctx.accounts.presale_account.total_token_remained = 0;
     Ok(())
 }
